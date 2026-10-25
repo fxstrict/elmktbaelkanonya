@@ -49,3 +49,7 @@ footer{text-align:center;color:var(--mu);font-size:11px;margin:22px 0 4px}
 .acts.one{grid-template-columns:1fr}.btn.wide2{grid-column:1/-1;background:transparent;border:1px dashed var(--bd);color:var(--mu);font-weight:400;font-size:13px}
 footer a{color:var(--ac);text-decoration:none;margin:0 6px;font-weight:700}
 .hb{display:flex;gap:8px}
+
+.wn{background:#fff3cd;color:#664d03;border-radius:12px;padding:10px 12px;font-size:13px;margin:8px 0}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .wn{background:#3a3217;color:#f3dc92}}
+:root[data-theme=dark] .wn{background:#3a3217;color:#f3dc92}
