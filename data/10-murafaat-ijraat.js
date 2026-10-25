@@ -1,4 +1,4 @@
-/* فرع: مرافعات وإجراءات — 136 صيغة
+/* فرع: مرافعات وإجراءات — 147 صيغة
    الصف: [معرّف ملف درايف، العنوان، رمز النوع] */
 addBranch("مرافعات وإجراءات",[
 ["1okIfDToYKyOgY_oIIVmGP-WmnkyaB6Tm","إعادة إعلان في الاستئناف","a"],
@@ -96,6 +96,14 @@ addBranch("مرافعات وإجراءات",[
 ["1a49wiSPMzlp9LoCtVVrNt_KeMDcWZQ46","نموذج لصحيفة دعوى التماس لإعادة النظر","f"],
 ["1_yedfhLuqmIzwbL4H1nzXtqSFZfUnIkQ","نموذج لصحيفة دعوى مخاصمة قاضي","f"],
 ["1a5puFKSTv2sgnprT4Jh-D5DWqoxgYUv4","نموذج لصحيفة طعن بالاستئناف","f"],
+["1uFR8tkIsLuVF7tQS1-LkkczCS9qHXPuI","أحكام عامة في الدفوع الموضوعية والشكلية وتعريف الدفوع","g"],
+["1vX6QvO32n4Uyjo3PTe4XMFbLDa4SAreU","الدفوع الخاصة بالبطلان","g"],
+["1vf7EJZdcCvwkFWC_fMsNNWhpMlpiCUPo","الدفوع الشكلية في أمر الأداء وليس الدفع بعدم القبول (المادة 115)","g"],
+["1vp4un3bBIgcdeGX1ZluR89CTy9qEtv88","الدفوع المتعلقة بالنظام العام في قانون المرافعات","g"],
+["1vyysoT6E-OSRUadoSuEf29tonyFgS0Dh","الدفوع في قانون المرافعات","g"],
+["1w21-lRu0aOnHKW1AXU_f7YSpIdoB0qMy","الكتاب الذهبي الشامل في الدفوع (الإصدار الأول) – البسيوني عبده","g"],
+["1w6WoQv_ZPzl2Gs9g9Tys70fF71Lrb-Fv","جميع الدفوع في قانون المرافعات مدعمة بنصوص المواد","g"],
+["1xDKNDqwj5valS-23yBv88PYtyu5XKUDI","موسوعة دفوع","g"],
 ["1MATVtpOjrWAqxpdeAil2Nd6vLpU9JGC8","مبادئ محكمة النقض في الإثبات (المعاينة وغيرها)","k"],
 ["1ZHdhlvKQaB0IyXyS9h8PgzWjNZj8xKLd","محضر تبليغ (قانون جزائري)","m"],
 ["1oUomoDt_5AS3faskXeb9ZKgz7EajN63m","محضر صلح","m"],
@@ -136,5 +144,8 @@ addBranch("مرافعات وإجراءات",[
 ["1PMx6NLf1ZLugV-AZ6ChedNHc0ZZxuOoE","تظلم من الطب الشرعي في واقعة تعذيب","t"],
 ["1PRe8IB0Thx20XOE6dMbSSoS57i50h05D","تظلم من حكم في قضية تموين","t"],
 ["1drcVDlUWl_RSr1-2c9VJyGTatzHt1OEh","تظلم من قرار نيابة في طلب تمكين","t"],
-["1VmTOZ14VwLgc-AhkijxImrFEV16zEtZP","صيغة تظلم من أمر أداء (نسخة 2)","t"]
+["1VmTOZ14VwLgc-AhkijxImrFEV16zEtZP","صيغة تظلم من أمر أداء (نسخة 2)","t"],
+["1Fw64nlv4HWAh3HyxzucHEgShbrlDpI4b","إجراءات رفع الدعوى (PDF)","x"],
+["1G9UaKJLHZ23dP2Dxy8UOyMsThWflGBwE","إجراءات رفع الدعوى المدنية (PDF)","x"],
+["1G5fjhSuBih_LPO2LP_ArQp0g9wk8RsjM","إجراءات رفع الدعوى – الجزء 1 (PDF)","x"]
 ]);
