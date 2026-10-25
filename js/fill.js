@@ -9,7 +9,7 @@ async function driveBuf(id){if(typeof DRIVE_KEY=='undefined'||!DRIVE_KEY)return 
  const m='application%2Fvnd.openxmlformats-officedocument.wordprocessingml.document',u=gd(id)?`https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=${m}&key=${DRIVE_KEY}`:`https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${DRIVE_KEY}`;
  const r=await fetch(u);if(!r.ok)throw new Error('http'+r.status);return r.arrayBuffer()}
 function pickSheet(id,msg){const d=byId[id];
- sheet(`<h2 class="sht">تعبئة: ${hx(d[1])}</h2>${msg?`<div class="wn">${msg}</div>`:''}<div class="shm">نزّل الصيغة أولاً ثم اخترها هنا ليملأ التطبيق فراغاتها، ويحفظ لك ملف Word جاهزاً على جهازك.</div><div class="acts one"><a class="btn" data-act="rec" data-id="${id}" href="${dl(id)}">⬇ 1) تنزيل الصيغة الأصلية</a><label class="btn pri">📂 2) اختيار الملف الذي نزّلته<input type="file" id="fpick" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label></div>`);
+ sheet(`<h2 class="sht">تعبئة: ${hx(d[1])}</h2>${msg?`<div class="wn">${msg}</div>`:''}<div class="shm">نزّل الصيغة أولاً ثم اخترها هنا ليملأ التطبيق فراغاتها، ويحفظ لك ملف Word جاهزاً على جهازك.</div><div class="acts one"><a class="btn" data-act="rec" data-dl="1" data-id="${id}" href="${dl(id)}">⬇ 1) تنزيل الصيغة الأصلية</a><label class="btn pri">📂 2) اختيار الملف الذي نزّلته<input type="file" id="fpick" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label></div>`);
  $('#fpick').onchange=async e=>{const f=e.target.files[0];if(f)start(id,await f.arrayBuffer())}}
 async function fillOpen(id){const d=byId[id];sheet(`<h2 class="sht">${hx(d[1])}</h2><div class="shm">جارٍ تجهيز الصيغة…</div>`);
  let buf=null;try{buf=await driveBuf(id)}catch(e){return pickSheet(id,'تعذّر جلب الملف مباشرة من درايف.')}
@@ -31,9 +31,9 @@ document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||el.datas
 document.addEventListener('click',async e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;
  if(a=='fill')fillOpen(el.dataset.id);
  else if(a=='fclr'){sv('fc',{});toast('تم مسح بيانات القضية');if(FS)start(FS.id,null).catch(()=>{});}
- else if(a=='fdl'&&FS){const out=FS.sc.blanks.map((b,i)=>fmt(b.kind,FS.vals[i]));
+ else if(a=='fdl'&&FS){const o=el.innerHTML;el.innerHTML='<span class="spin"></span> جارٍ تجهيز الملف…';el.classList.add('busy');setTimeout(()=>{el.classList.remove('busy');el.innerHTML=o},4000);const out=FS.sc.blanks.map((b,i)=>fmt(b.kind,FS.vals[i]));
   const fp=ld('fp',{}),fc=ld('fc',{});FS.sc.blanks.forEach((b,i)=>{const v=FS.vals[i];if(!v)return;if(KP.includes(b.kind))fp[b.kind]=v;if(KC.includes(b.kind))fc[b.kind]=v});sv('fp',fp);sv('fc',fc);
   try{const u8=await docxFill(FS.sc,out),name=(byId[FS.id][1]+(fc.A?' - '+fc.A:'')).replace(/[\\/:*?"<>|]/g,' ').trim()+'.docx',blob=new Blob([u8],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
    const f=new File([blob],name,{type:blob.type});
    if(navigator.canShare&&navigator.canShare({files:[f]})&&/Android|iPhone|iPad/i.test(navigator.userAgent)){try{await navigator.share({files:[f],title:name});toast('تم');return}catch(x){if(x&&x.name=='AbortError')return}}
-   const url=URL.createObjectURL(blob),l=document.createElement('a');l.href=url;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('تم تنزيل الملف')}catch(x){toast('تعذّر إنشاء الملف')}}});
+   const url=URL.createObjectURL(blob),l=document.createElement('a');l.href=url;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('✔ تم تنزيل ملف Word — راجع مجلد التنزيلات',4000);el.innerHTML='✔ تم التنزيل — راجع التنزيلات'}catch(x){toast('تعذّر إنشاء الملف')}}});
