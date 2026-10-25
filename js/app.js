@@ -1,8 +1,8 @@
 /* منطق التطبيق: بحث، تصفح، تصفية (نافذة سفلية)، مفضلة، آخر المفتوح */
 const $=s=>document.querySelector(s);
-const nz=t=>t.replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
-const D=DATA;enrich(D);D.forEach(d=>d.n=nz(d[1]+' '+d.t+' '+d.b+' '+d.p));
+const D=DATA;enrich(D);prep(D);
 const byId=Object.fromEntries(D.map(d=>[d[0],d]));
+const ALT=dedupe(D),BK=new Set(typeof BROKEN!=='undefined'?BROKEN:[]);
 const FA=[['b','الفرع','🏛️'],['t','النوع','📑'],['p','الموضوع','🏷️'],['s','المرحلة','⏱️'],['j','المحكمة / الجهة','⚖️']];
 const TI={'إنذار':'⚠️','إعلان':'📢','دعوى':'⚖️','عقد':'📜','محضر':'📝','توكيل':'✍️','إشكال':'🛑','تظلم':'🗣️','طلب / مستندات':'📄','نموذج':'🗂️','مبادئ وأحكام':'📖','دفوع ومذكرات':'🛡️','مراجع وإجراءات':'📘','تشريعات وقرارات':'📕'};
 const BI={'أحوال شخصية':'👨‍👩‍👧','جنائي':'🚔','مدني وعقود':'🏛️','إيجارات':'🏠','تنفيذ وبيوع وشفعة':'🔨','تجاري وشركات':'💼','إداري':'🏢','ملكية وحيازة':'🗝️','حكومي وضرائب وتأمينات':'🧾','مرافعات وإجراءات':'📚'};
@@ -12,13 +12,17 @@ const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let S={tab:'home',g:'b',f:{t:'',b:'',p:'',s:'',j:''},q:'',n:40},FAV=ld('fav',[]),REC=ld('rec',[]),TH=ld('theme','auto'),obs;
 const uniq=k=>[...new Set(D.map(d=>d[k]))];
 const match=(d,skip)=>{for(const k in S.f)if(k!==skip&&S.f[k]&&d[k]!==S.f[k])return false;return true};
-const qm=d=>{const q=nz(S.q.trim());return !q||q.split(/\s+/).every(w=>d.n.includes(w))};
+let _pq=['',null];const PQ=()=>{if(S.q!==_pq[0])_pq=[S.q,parseQ(S.q)];return _pq[1]};
+const qm=d=>{const p=PQ();return !p||score(d,p)>0};
 const nf=()=>Object.values(S.f).filter(Boolean).length;
 const gd=id=>byId[id][1].includes('مستند جوجل');
 const pv=id=>gd(id)?'https://docs.google.com/document/d/'+id+'/preview':'https://drive.google.com/file/d/'+id+'/preview',dl=id=>gd(id)?'https://docs.google.com/document/d/'+id+'/export?format=docx':'https://drive.usercontent.google.com/download?id='+id+'&export=download&confirm=t';
-function list(){const b=S.tab=='fav'?FAV.map(i=>byId[i]).filter(Boolean):S.tab=='rec'?REC.map(i=>byId[i]).filter(Boolean):D;
- return b.filter(d=>qm(d)&&(S.tab=='all'||S.tab=='home'?match(d):true))}
-const row=d=>{const f=FAV.includes(d[0]);return `<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${d[1]}</div><div class="rm">${d.t} · ${d.b}${d.p!='عام'?' · '+d.p:''}</div></div><button class="st ${f?'on':''}" data-act="fav" data-id="${d[0]}" aria-label="مفضلة">${f?'★':'☆'}</button></div>`};
+function list(){const b=S.tab=='fav'?FAV.map(i=>byId[i]).filter(Boolean):S.tab=='rec'?REC.map(i=>byId[i]).filter(Boolean):D,p=PQ(),fl=d=>S.tab=='all'||S.tab=='home'?match(d):true;
+ let L=b.filter(d=>fl(d)&&qm(d));
+ if(p&&(S.tab=='all'||S.tab=='home'))L=L.map(d=>[d,score(d,p)]).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);
+ if(!L.length&&p&&p.ws.length>1){L=b.filter(fl).map(d=>[d,score(d,p,true)]).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);L.near=L.length>0}
+ return L}
+const row=d=>{const f=FAV.includes(d[0]);return `<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${BK.has(d[0])?'⚠️ ':''}${d[1]}</div><div class="rm">${d.t} · ${d.b}${d.p!='عام'?' · '+d.p:''}${ALT[d[0]]?' · '+(ALT[d[0]].length+1)+' نسخ':''}</div></div><button class="st ${f?'on':''}" data-act="fav" data-id="${d[0]}" aria-label="مفضلة">${f?'★':'☆'}</button></div>`};
 function render(){
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab));
  $('#fe').textContent=FAV.length||'';$('#fn').textContent=nf()||'';$('#fn').hidden=!nf();$('#clr').hidden=!S.q;
@@ -30,7 +34,7 @@ function render(){
  if(S.tab=='lib'){const q=nz(S.q.trim());let h='';LIB.forEach(([g,items])=>{const it=items.filter(x=>!q||nz(x[1]).includes(q));if(it.length)h+=`<div class="bar2"><b>${g}</b><span>${it.length}</span></div><div class="grid">`+it.map(x=>`<a class="cat" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${x[0]}"><span class="ci">${x[2]}</span><b>${x[1]}</b><span>فتح القسم ↗</span></a>`).join('')+'</div>'});m.innerHTML=h||'<div class="em"><div>🔎</div>لا توجد أقسام مطابقة</div>'}
  else if(S.tab=='home'){const c={};D.forEach(d=>c[d[S.g]]=(c[d[S.g]]||0)+1);
   m.innerHTML=`<div class="bar2"><span>تصفّح حسب</span><button class="pill" data-act="gmenu">${gn} ▾</button></div><div class="grid">`+Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`<button class="cat" data-act="cat" data-v="${v}"><span class="ci">${icon(S.g,v)}</span><b>${v}</b><span>${n} صيغة</span></button>`).join('')+'</div>'}
- else{const L=list();let h=`<div class="bar2"><b>${L.length} صيغة</b>${S.tab=='rec'&&L.length?'<button class="lnk" data-act="recclr">مسح السجل</button>':''}</div>`;
+ else{const L=list();let h=(L.near?'<div class="wn">لا توجد صيغة تطابق كل الكلمات — هذه نتائج تطابق بعضها</div>':'')+`<div class="bar2"><b>${L.length} صيغة</b>${S.tab=='rec'&&L.length?'<button class="lnk" data-act="recclr">مسح السجل</button>':''}</div>`;
   if(!L.length)h+=`<div class="em"><div>${S.tab=='fav'?'⭐':S.tab=='rec'?'🕘':'🔎'}</div>${S.tab=='fav'?'لم تضف صيغاً للمفضلة بعد.<br>اضغط ☆ بجانب أي صيغة':S.tab=='rec'?'ستظهر هنا آخر الصيغ التي فتحتها':'لا توجد نتائج مطابقة'}</div>`;
   h+=L.slice(0,S.n).map(row).join('');if(L.length>S.n)h+='<div class="more" id="more">جارٍ تحميل المزيد…</div>';m.innerHTML=h;
   const mo=$('#more');if(mo&&'IntersectionObserver' in window){obs=new IntersectionObserver(e=>{if(e[0].isIntersecting){S.n+=40;render()}},{rootMargin:'300px'});obs.observe(mo)}}
@@ -40,7 +44,8 @@ function closeSheet(){$('#bd').classList.remove('open');$('#sh').classList.remov
 function toast(t){const e=$('#ts');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1600)}
 const wa=t=>'https://wa.me/'+CONTACT.wa+'?text='+encodeURIComponent(t);
 function itemSheet(id){const d=byId[id],dlo=d[1].includes('تحميل فقط');
- sheet(`<h2 class="sht">${d[1]}</h2><div class="shm">${d.t} · ${d.b} · ${d.p} · ${d.j}</div><div class="acts">${dlo?`<a class="btn pri" data-act="rec" data-id="${id}" href="${dl(id)}">⬇ تحميل الملف</a><a class="btn" target="_blank" rel="noopener" href="${pv(id)}">🔗 فتح في درايف</a>`:`<a class="btn pri" data-act="rec" data-id="${id}" target="_blank" rel="noopener" href="${pv(id)}">👁 معاينة</a><a class="btn" data-act="rec" data-id="${id}" href="${dl(id)}">⬇ تحميل</a>`}<a class="btn" target="_blank" rel="noopener" href="${gd(id)?'https://docs.google.com/document/d/'+id+'/edit':'https://drive.google.com/file/d/'+id+'/view'}">↗ فتح في درايف</a><button class="btn" data-act="copy" data-id="${id}">🔗 نسخ الرابط</button><button class="btn" data-act="share" data-id="${id}">📤 مشاركة</button><a class="btn wide2" target="_blank" rel="noopener" href="${wa('أبلغ عن ملاحظة على صيغة في المكتبة القانونية:\n'+d[1]+'\n'+pv(id))}">⚠️ إبلاغ عن خطأ أو ملاحظة</a></div>`)}
+ const al=ALT[id]||[];
+ sheet(`<h2 class="sht">${d[1]}</h2><div class="shm">${d.t} · ${d.b} · ${d.p} · ${d.j}</div>${BK.has(id)?'<div class="wn">⚠️ تعذّر التحقق من رابط هذه الصيغة في آخر فحص؛ قد يكون محذوفاً أو غير مشارك. يمكنك الإبلاغ بالزر أسفله.</div>':''}<div class="acts">${dlo?`<a class="btn pri" data-act="rec" data-id="${id}" href="${dl(id)}">⬇ تحميل الملف</a><a class="btn" target="_blank" rel="noopener" href="${pv(id)}">🔗 فتح في درايف</a>`:`<a class="btn pri" data-act="rec" data-id="${id}" target="_blank" rel="noopener" href="${pv(id)}">👁 معاينة</a><a class="btn" data-act="rec" data-id="${id}" href="${dl(id)}">⬇ تحميل</a>`}<a class="btn" target="_blank" rel="noopener" href="${gd(id)?'https://docs.google.com/document/d/'+id+'/edit':'https://drive.google.com/file/d/'+id+'/view'}">↗ فتح في درايف</a><button class="btn" data-act="copy" data-id="${id}">🔗 نسخ الرابط</button><button class="btn" data-act="share" data-id="${id}">📤 مشاركة</button><a class="btn wide2" target="_blank" rel="noopener" href="${wa('أبلغ عن ملاحظة على صيغة في المكتبة القانونية:\n'+d[1]+'\n'+pv(id))}">⚠️ إبلاغ عن خطأ أو ملاحظة</a></div>${al.length?'<div class="shm" style="margin:14px 0 6px">نسخ أخرى من هذه الصيغة</div><div class="acts one">'+al.map(a=>`<button class="btn" data-act="open" data-id="${a[0]}">${a[1]}</button>`).join('')+'</div>':''}`)}
 function contactSheet(){sheet(`<h2 class="sht">تواصل مع المكتبة القانونية</h2><div class="shm">للاستفسار، أو إرسال صيغ جديدة لمراجعتها وإضافتها</div><div class="acts one"><a class="btn pri" target="_blank" rel="noopener" href="${wa('السلام عليكم، أرغب في الاستفسار بخصوص المكتبة القانونية.')}">💬 محادثة واتساب مباشرة</a><a class="btn" target="_blank" rel="noopener" href="${wa('السلام عليكم، لدي صيغة جديدة أرغب في مشاركتها لمراجعتها وإضافتها إلى المكتبة القانونية. سأرسل الملف في هذه المحادثة.')}">📤 مشاركة صيغة جديدة للمراجعة</a><a class="btn" href="mailto:${CONTACT.mail}?subject=${encodeURIComponent('المكتبة القانونية - مراسلة')}">✉️ مراسلة بالبريد الإلكتروني</a><a class="btn" href="tel:${CONTACT.phone}">📞 اتصال ${CONTACT.phone}</a></div><div class="shm" style="margin:14px 0 0">${CONTACT.mail}</div>`)}
 function filterSheet(open){const sc=$('.fl')?$('.fl').scrollTop:0;
  const body=FA.map(([k,l,ic])=>{const c={};D.forEach(d=>{if(match(d,k)&&qm(d))c[d[k]]=(c[d[k]]||0)+1});const o=Object.entries(c).sort((a,b)=>b[1]-a[1]);if(S.f[k]&&!c[S.f[k]])o.unshift([S.f[k],0]);
