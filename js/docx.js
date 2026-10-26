@@ -62,3 +62,7 @@ async function docxScan(buf){const ents=zipRead(buf),de=ents.find(e=>e.name=='wo
  const xml=_D.decode(await zipData(de)),blanks=[];walkDoc(xml,i=>{blanks.push(i);return null});return{ents,xml,blanks}}
 async function docxFill(sc,vals){const xml=walkDoc(sc.xml,i=>vals[i.idx]||null),b=_T.encode(xml);
  return zipWrite(sc.ents.map(e=>e.name=='word/document.xml'?{...e,method:0,crc:crc32(b),cs:b.length,us:b.length,raw:b}:e))}
+
+/* نص الوثيقة فقط (لمعاينة الملف داخل البرنامج) */
+async function docxText(u8){const ents=zipRead(u8),de=ents.find(e=>e.name=='word/document.xml'),xml=_D.decode(await zipData(de));
+ return(xml.match(PRE)||[]).map(p=>{let t='';p.replace(TRE,(m,a,x)=>{t+=xun(x);return m});return t}).join('\n').replace(/\n{3,}/g,'\n\n').trim()}

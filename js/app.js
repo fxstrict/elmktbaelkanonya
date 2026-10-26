@@ -43,7 +43,7 @@ function sheet(h){$('#sh').innerHTML='<div class="grab"></div>'+h;$('#bd').hidde
 function closeSheet(){$('#bd').classList.remove('open');$('#sh').classList.remove('open');document.body.classList.remove('lock');setTimeout(()=>{if(!$('#sh').classList.contains('open'))$('#bd').hidden=true},250)}
 function toast(t,ms){const e=$('#ts');e.textContent=t;e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('on'),ms||1600)}
 /* تغذية راجعة واضحة عند بدء التحميل: الزر يتغير + رسالة */
-function dlFeedback(el){if(el.classList.contains('busy'))return;const o=el.innerHTML;el.classList.add('busy');el.innerHTML='<span class="spin"></span> جارٍ التحميل…';toast('⬇ بدأ التحميل — ستجد الملف في مجلد التنزيلات',4000);setTimeout(()=>{el.innerHTML='✔ بدأ التحميل — راجع التنزيلات'},1500);setTimeout(()=>{el.classList.remove('busy');el.innerHTML=o},6000)}
+function dlFeedback(el){if(el.classList.contains('busy'))return;const o=el.innerHTML;el.classList.add('busy');el.innerHTML='<span class="spin"></span> جارٍ التحميل…';toast('⬇ بدأ التحميل — ستجد الملف في مجلد التنزيلات',4000);setTimeout(()=>{el.innerHTML='✔ بدأ التحميل — افتحه من إشعار التنزيلات'},1500);setTimeout(()=>{el.classList.remove('busy');el.innerHTML=o},6000)}
 const wa=t=>'https://wa.me/'+CONTACT.wa+'?text='+encodeURIComponent(t);
 function itemSheet(id){const d=byId[id],dlo=d[1].includes('تحميل فقط');
  const al=ALT[id]||[];
