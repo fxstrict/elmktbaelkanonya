@@ -66,3 +66,13 @@ footer a{color:var(--ac);text-decoration:none;margin:0 6px;font-weight:700}
 .upd{position:fixed;z-index:60;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top,0px));max-width:700px;margin:auto;display:flex;align-items:center;gap:8px;background:var(--ac);color:var(--bg);padding:10px 12px;border-radius:14px;font-size:13px;box-shadow:0 6px 24px #0004}
 .upd span{flex:1}.upd button{background:var(--ac2);color:#111;border-radius:10px;padding:7px 12px;font-weight:700;font-size:13px}.upd button.x{background:none;color:inherit;padding:4px 8px}
 .pr{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bd);font-size:14px}.pr span{flex:1;line-height:1.5}.pb{flex:none;width:42px;height:38px;border-radius:10px;background:var(--tint);color:var(--ac);display:grid;place-items:center;text-decoration:none;font-size:16px}
+
+.fld select{width:100%;height:44px;border-radius:12px;border:1px solid var(--bd);background:var(--sf);color:inherit;padding:0 10px;font-size:15px;font-family:inherit}
+.cres{background:var(--tint);border-radius:14px;padding:14px;text-align:center;margin:6px 0 12px;display:flex;flex-direction:column;gap:4px}.cres b{font-size:19px}.cres span{font-size:13px;color:var(--mu)}.cres small{font-size:12px;color:var(--mu)}
+.dlw{background:#fff3cd;color:#664d03;border-radius:12px;padding:10px 12px;font-size:13px;margin:0 0 10px;cursor:pointer}
+:root[data-theme=dark] .dlw{background:#3a3217;color:#f3dc92}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .dlw{background:#3a3217;color:#f3dc92}}
+.pr small{color:var(--mu);font-size:11px;flex:none}
+
+.lk{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.lkb{width:100%;max-width:340px;text-align:center;display:flex;flex-direction:column;gap:12px}.lkl{font-size:46px}.lkb h2{margin:0}.lks{color:var(--mu);font-size:13px;min-height:18px}
+.lkb input{height:50px;border-radius:14px;border:1px solid var(--bd);background:var(--sf);color:inherit;text-align:center;font-size:24px;letter-spacing:8px}
