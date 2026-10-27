@@ -11,8 +11,9 @@ const KEY=process.env.DRIVE_API_KEY||'',API=process.env.DRIVE_API_BASE||'https:/
 const CONC=+(arg('concurrency')||6),FOLDERS=process.argv.includes('--folders');
 let code=fs.readFileSync(path.join(root,'js/config.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'js/library.js'),'utf8')+'\n';
 fs.readdirSync(path.join(root,'data')).filter(f=>/^\d/.test(f)).sort().forEach(f=>code+=fs.readFileSync(path.join(root,'data',f),'utf8')+'\n');
-const {DATA,LIB}=vm.runInNewContext(code+';({DATA,LIB})');
-const items=DATA.map(r=>({id:r[0],title:r[1],kind:/مستند جوجل/.test(r[1])?'doc':'file'}));
+const {DATA,LIB,PARTS}=vm.runInNewContext(code+';({DATA,LIB,PARTS})');
+const items=DATA.map(r=>({id:r[0],title:r[1],kind:r[2]=='v'?'folder':/مستند جوجل/.test(r[1])?'doc':'file'}));
+DATA.filter(r=>r[2]=='v').forEach(r=>(PARTS[r[0]]||[]).forEach(p=>items.push({id:p[0],title:p[1],kind:'file'})));
 if(FOLDERS)LIB.forEach(([g,it])=>it.forEach(x=>items.push({id:x[0],title:x[1],kind:'folder'})));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function get(url,opt={},tries=4){for(let i=0;i<tries;i++){try{const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(15000),...opt});if(r.status==429||r.status>=500){await sleep(1500*(i+1));continue}return r}catch(e){if(i==tries-1)throw e;await sleep(1000*(i+1))}}return {status:429,headers:new Headers(),text:async()=>''}}

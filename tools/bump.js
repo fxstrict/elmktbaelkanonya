@@ -7,5 +7,6 @@ const sub=(f,fn)=>fs.writeFileSync(r(f),fn(fs.readFileSync(r(f),'utf8')));
 sub('js/config.js',s=>s.replace(/version:'[\d.]+'/,`version:'${v}'`));
 sub('sw.js',s=>s.replace(/siyagh-v[\d.]+/,'siyagh-v'+v).replace(/الإصدار [\d.]+/,'الإصدار '+v));
 sub('index.html',s=>s.replace(/(\.(?:js|css))\?v=[\d.]+"/g,`$1?v=${v}"`));
+sub('README.md',s=>s.replace(/\(الإصدار [\d.]+\)/,`(الإصدار ${v})`));
 fs.writeFileSync(r('version.json'),JSON.stringify({version:v})+'\n');
 console.log('تم → الإصدار',v);
