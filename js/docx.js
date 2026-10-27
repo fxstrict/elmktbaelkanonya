@@ -66,3 +66,16 @@ async function docxFill(sc,vals){const xml=walkDoc(sc.xml,i=>vals[i.idx]||null),
 /* نص الوثيقة فقط (لمعاينة الملف داخل البرنامج) */
 async function docxText(u8){const ents=zipRead(u8),de=ents.find(e=>e.name=='word/document.xml'),xml=_D.decode(await zipData(de));
  return(xml.match(PRE)||[]).map(p=>{let t='';p.replace(TRE,(m,a,x)=>{t+=xun(x);return m});return t}).join('\n').replace(/\n{3,}/g,'\n\n').trim()}
+/* ---- بحث واستبدال (للصيغ التي لا فراغات فيها): يعمل عبر أجزاء النص المتعددة داخل الفقرة، ويحافظ على تنسيق أول جزء ---- */
+function replaceDoc(xml,pairs,apply){const counts=pairs.map(()=>0);
+ const out=xml.replace(PRE,p=>{const nodes=[];p.replace(TRE,(m,a,t)=>{nodes.push(xun(t));return m});const full=nodes.join(''),hits=[];
+  pairs.forEach((pr,pi)=>{if(!pr[0])return;let i=0;while((i=full.indexOf(pr[0],i))>=0){hits.push({s:i,e:i+pr[0].length,r:pr[1]||'',pi});i+=pr[0].length}});
+  if(!hits.length)return p;hits.sort((a,b)=>a.s-b.s||b.e-a.e);const ok=[];let last=-1;hits.forEach(h=>{if(h.s>=last){ok.push(h);last=h.e}});
+  ok.forEach(h=>counts[h.pi]++);if(!apply)return p;
+  const chars=nodes.map(t=>t.split('')),starts=[];let acc=0;nodes.forEach(t=>{starts.push(acc);acc+=t.length});
+  const at=pos=>{let i=starts.length-1;while(i>0&&starts[i]>pos)i--;return[i,pos-starts[i]]};
+  ok.forEach(h=>{const[i0,j0]=at(h.s);chars[i0][j0]=h.r;for(let q=h.s+1;q<h.e;q++){const[i,j]=at(q);chars[i][j]=''}});
+  let k=0;return p.replace(TRE,(m0,a)=>`<w:t xml:space="preserve"${(a||'').replace(/\sxml:space="[^"]*"/,'')}>${xesc(chars[k++].join(''))}</w:t>`)});
+ return{xml:out,counts}}
+async function docxReplace(sc,pairs){const r=replaceDoc(sc.xml,pairs,true),b=_T.encode(r.xml);
+ return zipWrite(sc.ents.map(e=>e.name=='word/document.xml'?{...e,method:0,crc:crc32(b),cs:b.length,us:b.length,raw:b}:e))}
