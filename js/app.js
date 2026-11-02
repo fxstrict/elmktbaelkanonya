@@ -35,7 +35,7 @@ function render(){
  else if(S.tab=='fav')m.innerHTML=casesView();
  else if(S.tab=='home'){const c={};D.forEach(d=>c[d[S.g]]=(c[d[S.g]]||0)+1);
   m.innerHTML=homeExtras()+`<div class="bar2"><span>تصفّح حسب</span><button class="pill" data-act="gmenu">${gn} ▾</button></div><div class="grid">`+Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`<button class="cat" data-act="cat" data-v="${v}"><span class="ci">${icon(S.g,v)}</span><b>${v}</b><span>${n} صيغة</span></button>`).join('')+'</div>'}
- else{const L=list();let h=(L.near?'<div class="wn">لا توجد صيغة تطابق كل الكلمات — هذه نتائج تطابق بعضها</div>':'')+`<div class="bar2"><b>${L.length} صيغة</b>${S.tab=='rec'&&L.length?'<button class="lnk" data-act="recclr">مسح السجل</button>':''}</div>`;
+ else{const L=list();let h=(S.tab=='all'?artCard(S.q):'')+(L.near?'<div class="wn">لا توجد صيغة تطابق كل الكلمات — هذه نتائج تطابق بعضها</div>':'')+`<div class="bar2"><b>${L.length} صيغة</b>${S.tab=='rec'&&L.length?'<button class="lnk" data-act="recclr">مسح السجل</button>':''}</div>`;
   if(!L.length)h+=`<div class="em"><div>${S.tab=='fav'?'⭐':S.tab=='rec'?'🕘':'🔎'}</div>${S.tab=='fav'?'لم تضف صيغاً للمفضلة بعد.<br>اضغط ☆ بجانب أي صيغة':S.tab=='rec'?'ستظهر هنا آخر الصيغ التي فتحتها':'لا توجد نتائج مطابقة'}</div>`;
   h+=L.slice(0,S.n).map(row).join('');if(L.length>S.n)h+='<div class="more" id="more">جارٍ تحميل المزيد…</div>';m.innerHTML=h;
   const mo=$('#more');if(mo&&'IntersectionObserver' in window){obs=new IntersectionObserver(e=>{if(e[0].isIntersecting){S.n+=40;render()}},{rootMargin:'300px'});obs.observe(mo)}}
