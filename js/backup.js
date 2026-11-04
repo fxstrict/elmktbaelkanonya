@@ -16,7 +16,7 @@ function bkParse(txt){let o;try{o=JSON.parse(txt)}catch(e){return null}if(!o||o.
 function bkMerge(b){const pj=k=>{try{return JSON.parse(b[k])}catch(e){return null}},set=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),uni=(a,c)=>[...new Set([...(a||[]),...(c||[])])];
  const fa=pj('fav');if(Array.isArray(fa))set('fav',uni(bkGet('fav'),fa));
  const ra=pj('rec');if(Array.isArray(ra))set('rec',uni(bkGet('rec'),ra).slice(0,30));
- const bl=pj('lists');if(Array.isArray(bl)){const l=bkGet('lists')||[];bl.forEach(c=>{const m=l.find(x=>x.id==c.id);if(!m)l.push(c);else{m.items=uni(m.items,c.items);const sm=new Map((m.sessions||[]).map(s=>[s.id,s]));(c.sessions||[]).forEach(s=>{if(!sm.has(s.id))sm.set(s.id,s)});m.sessions=[...sm.values()];['no','year','court','circuit','client','opp','notes','status'].forEach(f=>{if(!m[f]&&c[f])m[f]=c[f]})}});set('lists',l)}
+ const bl=pj('lists');if(Array.isArray(bl)){const l=bkGet('lists')||[];bl.forEach(c=>{const m=l.find(x=>x.id==c.id);if(!m)l.push(c);else{m.items=uni(m.items,c.items);const sm=new Map((m.sessions||[]).map(s=>[s.id,s]));(c.sessions||[]).forEach(s=>{if(!sm.has(s.id))sm.set(s.id,s)});m.sessions=[...sm.values()];['no','year','court','circuit','client','opp','notes','status','mw'].forEach(f=>{if(!m[f]&&c[f])m[f]=c[f]})}});set('lists',l)}
  const bd=pj('dls');if(Array.isArray(bd)){const l=bkGet('dls')||[];bd.forEach(x=>{if(!l.some(y=>y.id==x.id))l.push(x)});set('dls',l)}
  const bc=pj('cnt');if(bc&&typeof bc=='object'){const l=bkGet('cnt')||{};for(const i in bc)l[i]=Math.max(l[i]||0,bc[i]||0);set('cnt',l)}
  ['fp','fc'].forEach(k=>{const x=pj(k);if(x&&typeof x=='object'){const l=bkGet(k)||{};for(const i in x)if(!l[i])l[i]=x[i];set(k,l)}})}

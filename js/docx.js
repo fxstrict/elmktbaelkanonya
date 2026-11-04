@@ -79,3 +79,16 @@ function replaceDoc(xml,pairs,apply){const counts=pairs.map(()=>0);
  return{xml:out,counts}}
 async function docxReplace(sc,pairs){const r=replaceDoc(sc.xml,pairs,true),b=_T.encode(r.xml);
  return zipWrite(sc.ents.map(e=>e.name=='word/document.xml'?{...e,method:0,crc:crc32(b),cs:b.length,us:b.length,raw:b}:e))}
+
+/* ---- إنشاء ملف Word جديد (عربي RTL) من كتل: {t:'h'|'p'|'li'|'tbl', x:نص, rows:[[خلايا]]} ---- */
+function docxBuild(blocks,title){
+ const run=(t,b,sz)=>`<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>${b?'<w:b/><w:bCs/>':''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/><w:rtl/></w:rPr><w:t xml:space="preserve">${xesc(String(t))}</w:t></w:r>`;
+ const para=(t,b,sz,after)=>`<w:p><w:pPr><w:bidi/><w:spacing w:after="${after==null?100:after}"/></w:pPr>${run(t,b,sz||24)}</w:p>`;
+ const cell=(t,w,hd)=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${hd?'<w:shd w:val="clear" w:color="auto" w:fill="E6EFEF"/>':''}</w:tcPr>${para(t,hd,22,0)}</w:tc>`;
+ const bd=['top','left','bottom','right','insideH','insideV'].map(k=>`<w:${k} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('');
+ const body=blocks.map(b=>{if(b.t=='h')return para(b.x,true,b.sz||30,160);if(b.t=='li')return para('• '+b.x,false,22,40);if(b.t=='tbl'){const n=b.rows[0].length,w=Math.floor(9800/n);return `<w:tbl><w:tblPr><w:bidiVisual/><w:tblW w:w="9800" w:type="dxa"/><w:tblBorders>${bd}</w:tblBorders></w:tblPr><w:tblGrid>${b.rows[0].map(()=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${b.rows.map((r,i)=>`<w:tr>${r.map(c=>cell(c,w,i==0)).join('')}</w:tr>`).join('')}</w:tbl>${para('',false,12,60)}`}return para(b.x,false,b.sz||24)}).join('');
+ const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1100" w:bottom="1134" w:left="1100" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+ const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+ const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+ const ent=(name,xml)=>{const b=_T.encode(xml);return{name,method:0,time:0,date:0x21,crc:crc32(b),cs:b.length,us:b.length,raw:b}};
+ return zipWrite([ent('[Content_Types].xml',ct),ent('_rels/.rels',rels),ent('word/document.xml',doc)])}

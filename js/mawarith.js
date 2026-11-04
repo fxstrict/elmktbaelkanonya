@@ -99,14 +99,47 @@ function mwSolve(h,female){
  notes.push('تُحجب الجدات بالأم، وتُحجب الجدة لأب بالأب. ولا يُحسب في الحاسبة فرع ابن الابن الأنزل ولا الحمل ولا المفقود ولا موانع الإرث (القتل واختلاف الدين)، فاستبعد من لا يرث منها قبل الإدخال.');
  const out=res(remainder);out.awl=awl;if(awl){let L=awl.to;out.base=BigInt(awl.to)}out.notes=notes;return out}
 
+/* ---------- الوصية الواجبة (م 76–80 من قانون الوصية 71/1946) ---------- */
+/* rowsIn: [{t:'ابن'|'بنت', n, sc, dc, gift}] — ولد توفي قبل أبيه/معه، وعدد أبنائه وبناته (غير الوارثين)، وما أعطاه المتوفى لهم بلا عوض. */
+function mwWajiba(h,female,rowsIn,net){const num=x=>{const v=parseFloat(x);return isFinite(v)&&v>0?v:0},I=x=>Math.max(0,parseInt(x)||0);
+ const rs=(rowsIn||[]).map(r=>({t:r.t=='بنت'?'بنت':'ابن',n:r.n||'',sc:I(r.sc),dc:I(r.dc),gift:num(r.gift)})).filter(r=>r.sc+r.dc>0);
+ if(!rs.length)return{rows:[],total:0,paid:0,scale:1,notes:[],capped:false};
+ const notes=[],ss=rs.filter(r=>r.t=='ابن'),sumSc=ss.reduce((a,r)=>a+r.sc,0),sumDc=ss.reduce((a,r)=>a+r.dc,0);let gsHeir=false,gdHeir=false;
+ if(sumSc+sumDc>0){const hh={...h,gsons:I(h.gsons)+sumSc,gdaughters:I(h.gdaughters)+sumDc},r0=mwSolve(hh,female);if(r0.out)return{error:'تعذّر تحديد أهلية أولاد الابن للوصية الواجبة: '+r0.out};
+  const g=k=>{const x=r0.rows.find(y=>y.key==k);return !!(x&&x.f[0]>0n)};gsHeir=g('gsons');gdHeir=g('gdaughters')}
+ const out=[];
+ for(const r of rs){const key=r.t=='ابن'?'sons':'daughters',h2={...h};h2[key]=I(h[key])+1;const r2=mwSolve(h2,female);if(r2.out)return{error:'تعذّر حساب نصيب الولد المتوفى لو كان حياً: '+r2.out};
+  const row=r2.rows.find(x=>x.key==key),share=row?row.per:fz;let sc=r.sc,dc=r.dc;
+  if(r.t=='ابن'){if(gsHeir&&sc>0){notes.push('أبناء الابن المتوفى يرثون ميراثاً (لا يحجبهم ابن حي)، فلا وصية واجبة لهم؛ أدخلهم في خطوة الورثة.');sc=0}if(gdHeir&&dc>0){notes.push('بنات الابن المتوفى يرثن ميراثاً فلا وصية واجبة لهن؛ أدخلهن في خطوة الورثة.');dc=0}}
+  const gross=fnum(share)*net,entitle=Math.max(0,gross-r.gift),units=sc*2+dc;
+  out.push({n:r.n||'فرع ولد متوفى',t:r.t,sc,dc,share,gross,gift:r.gift,units,amount:units?entitle:0});}
+ const total=out.reduce((a,x)=>a+x.amount,0),third=net/3,paid=Math.min(total,third),scale=total>0?paid/total:1;
+ out.forEach(x=>{x.paid=x.amount*scale;x.eachSon=x.units?x.paid*2/x.units:0;x.eachDau=x.units?x.paid/x.units:0});
+ if(total>third)notes.push('الوصية الواجبة تزيد على الثلث فتقتصر على الثلث وتُوزَّع بين المستحقين بالمحاصة (م 76 و80).');
+ return{rows:out,total,paid,scale,capped:total>third,notes}}
 /* ---------- التركة والوصية ---------- */
-/* o: {assets:[{q,p}], debts:[{v}], wills:[{n,t,kind,v}], appr:{مفتاح الفئة:true}} */
+/* o: {h,female,wj,assets:[{q,p}],debts:[{v}],wills:[{n,t,kind,v}],appr:{مفتاح الفئة:true}} */
 function mwEstate(res,o){const num=x=>{const v=parseFloat(x);return isFinite(v)&&v>0?v:0};
  const A=(o.assets||[]).reduce((s,a)=>s+num(a.q)*num(a.p),0),D=(o.debts||[]).reduce((s,d)=>s+num(d.v),0),net=A-D;
  if(net<=0)return{A,D,net,error:A<=0?'أدخل قيمة الأصول أولاً.':'الديون ومصروفات التجهيز تستغرق التركة أو تزيد عليها، فلا وصية ولا ميراث.'};
- const wills=(o.wills||[]).map(w=>({n:w.n||'موصى له',t:w.t,amt:w.kind=='pct'?net*num(w.v)/100:num(w.v)})).filter(w=>w.amt>0),W=wills.reduce((s,w)=>s+w.amt,0),third=net/3,V1=Math.min(W,third),E=W-V1;
+ const wj=(o.wj&&o.wj.length)?mwWajiba(o.h||{},!!o.female,o.wj,net):null;if(wj&&wj.error)return{A,D,net,error:wj.error};
+ const wjPaid=wj?wj.paid:0,third=net/3,thirdRem=Math.max(0,third-wjPaid);
+ const wills=(o.wills||[]).map(w=>({n:w.n||'موصى له',t:w.t,amt:w.kind=='pct'?net*num(w.v)/100:num(w.v)})).filter(w=>w.amt>0),W=wills.reduce((s,w)=>s+w.amt,0),V1=Math.min(W,thirdRem),E=W-V1;
  const rows=res.rows.map(r=>({...r,s:fnum(r.f)})),appr=o.appr||{};let P=0;if(E>0)rows.forEach(r=>{if(r.s>0&&appr[r.key])P+=E*r.s});
  const paid=V1+P,ratio=W>0?paid/W:0;wills.forEach(w=>{w.got=w.amt*ratio;w.within=W>0?w.amt*V1/W:0});
- rows.forEach(r=>{r.money=r.s*(net-V1)-(E>0&&appr[r.key]?E*r.s:0);r.each=r.money/r.count});
+ const pool=net-wjPaid-V1;rows.forEach(r=>{r.money=r.s*pool-(E>0&&appr[r.key]?E*r.s:0);r.each=r.money/r.count});
  const rem=res.remainder?fnum(res.remainder):0;
- return{A,D,net,third,W,V1,E,P,paid,wills,rows,remMoney:rem*(net-V1),exceed:E>0,unapproved:E-P}}
+ return{A,D,net,third,thirdRem,W,V1,E,P,paid,wills,rows,wj,wjPaid,remMoney:rem*pool,exceed:E>0,unapproved:E-P}}
+/* ---------- المناسخات: وفاة وارث قبل قسمة التركة ---------- */
+/* res1/est1: نتيجة المسألة الأولى، key: فئة الوارث المتوفى، res2: مسألة ورثته. تعيد حصة كل وارث جديد من التركة الأولى */
+function mwMun(res1,est1,key,res2){const r1=res1.rows.find(x=>x.key==key),m1=est1&&!est1.error?est1.rows.find(x=>x.key==key):null;if(!r1)return[];
+ return res2.rows.filter(r=>r.f[0]>0n).map(r=>{const fr=fmul(r1.per,r.f);return{key:r.key,label:r.label,count:r.count,fracFirst:fr,fracEach:fdiv(fr,Fr(r.count)),money:m1?m1.each*fnum(r.f):null,each:m1?m1.each*fnum(r.f)/r.count:null,why:r.why}})}
+/* ---------- قسمة الأعيان وفروق التسوية ---------- */
+/* assign: {index الأصل: معرّف المستلم}; المعرّف: 'h:المفتاح' للوارث، 'w:رقم' للموصى له، 'j:رقم' لفرع الوصية الواجبة */
+function mwDivide(est,assets,assign){const num=x=>{const v=parseFloat(x);return isFinite(v)&&v>0?v:0};
+ const R=[];est.rows.filter(r=>r.f[0]>0n).forEach(r=>R.push({id:'h:'+r.key,label:r.label+(r.count>1?' (للفئة كلها)':''),due:r.money,got:0}));
+ est.wills.forEach((w,i)=>R.push({id:'w:'+i,label:'موصى له: '+w.n,due:w.got,got:0}));
+ if(est.wj)est.wj.rows.forEach((x,i)=>R.push({id:'j:'+i,label:'وصية واجبة: '+x.n,due:x.paid,got:0}));
+ let un=0;assets.forEach((a,i)=>{const v=num(a.q)*num(a.p);if(!v)return;const t=R.find(x=>x.id==assign[i]);if(t)t.got+=v;else un+=v});
+ R.forEach(x=>x.diff=x.got-x.due);const pay=R.filter(x=>x.diff>0.005).reduce((s,x)=>s+x.diff,0),recv=-R.filter(x=>x.diff<-0.005).reduce((s,x)=>s+x.diff,0);
+ return{rows:R,unassigned:un,pay,recv,toDebts:pay-recv}}
