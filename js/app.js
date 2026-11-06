@@ -86,6 +86,6 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
 $('#q').addEventListener('input',e=>{S.q=e.target.value;S.n=40;if(S.q.trim()&&S.tab=='home')S.tab='all';render()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape')closeSheet()});
 $('#q').placeholder='ابحث في '+D.length+' صيغة…';$('#cnt').textContent='صحف وصيغ ونماذج · '+D.length+' ملفاً';
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{});
 const v=$('#ver');if(v)v.textContent='الإصدار '+APP.version;
 applyTheme();render();
