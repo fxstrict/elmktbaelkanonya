@@ -1,9 +1,9 @@
 /* نسخة احتياطية لبياناتك على الجهاز (قضايا وجلسات ومواعيد ومفضلة وإعدادات) واستعادتها أو دمجها. */
-const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme'];
+const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme','pa','acc'];
 let BKP=null;
 const bkGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const bkDays=()=>{const s=localStorage.getItem('lastbk');return s?Math.floor((today12()-parseD(s))/864e5):null};
-function bkCount(d){const g=k=>{try{return JSON.parse(d[k])}catch(e){return null}},L=g('lists')||[];return `${L.length} قضية/قائمة · ${L.reduce((a,c)=>a+((c.sessions||[]).length),0)} جلسة · ${(g('dls')||[]).length} ميعاد · ${(g('fav')||[]).length} مفضلة`}
+function bkCount(d){const g=k=>{try{return JSON.parse(d[k])}catch(e){return null}},L=g('lists')||[];return `${L.length} قضية/قائمة · ${L.reduce((a,c)=>a+((c.sessions||[]).length),0)} جلسة · ${(g('dls')||[]).length} ميعاد · ${(g('fav')||[]).length} مفضلة · ${(g('pa')||[]).length} توكيل · ${(g('acc')||[]).length} قيد حساب`}
 function bkLocal(){const d={};BKEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)d[k]=v});return d}
 function bkSheet(){const loc=bkLocal(),dd=bkDays();
  sheet(`<h2 class="sht">💾 النسخة الاحتياطية</h2><div class="shm">بياناتك (القضايا والجلسات والمواعيد والمفضلة والإعدادات) محفوظة على هذا الجهاز فقط. احفظ نسخة قبل تغيير الهاتف أو مسح بيانات المتصفح.</div><div class="shm"><b>الموجود الآن:</b> ${bkCount(loc)}<br><b>آخر نسخة:</b> ${dd==null?'لم تُحفظ بعد':dd==0?'اليوم':'منذ '+dd+' يوماً'}</div><div class="acts one"><button class="btn pri" data-act="bkexp">⬇ حفظ نسخة احتياطية</button><label class="btn">📂 استعادة من نسخة<input type="file" id="bkf" accept=".json,application/json" hidden></label></div><div class="shm" style="margin-top:12px">تحتوي النسخة على أسماء الموكلين وبيانات القضايا، فاحفظها في مكان آمن. لا تشمل رمز القفل ولا ملفات التعبئة المحفوظة على الجهاز.</div>`)}
@@ -16,8 +16,9 @@ function bkParse(txt){let o;try{o=JSON.parse(txt)}catch(e){return null}if(!o||o.
 function bkMerge(b){const pj=k=>{try{return JSON.parse(b[k])}catch(e){return null}},set=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),uni=(a,c)=>[...new Set([...(a||[]),...(c||[])])];
  const fa=pj('fav');if(Array.isArray(fa))set('fav',uni(bkGet('fav'),fa));
  const ra=pj('rec');if(Array.isArray(ra))set('rec',uni(bkGet('rec'),ra).slice(0,30));
- const bl=pj('lists');if(Array.isArray(bl)){const l=bkGet('lists')||[];bl.forEach(c=>{const m=l.find(x=>x.id==c.id);if(!m)l.push(c);else{m.items=uni(m.items,c.items);const sm=new Map((m.sessions||[]).map(s=>[s.id,s]));(c.sessions||[]).forEach(s=>{if(!sm.has(s.id))sm.set(s.id,s)});m.sessions=[...sm.values()];['no','year','court','circuit','client','opp','notes','status','mw'].forEach(f=>{if(!m[f]&&c[f])m[f]=c[f]})}});set('lists',l)}
+ const bl=pj('lists');if(Array.isArray(bl)){const l=bkGet('lists')||[];bl.forEach(c=>{const m=l.find(x=>x.id==c.id);if(!m)l.push(c);else{m.items=uni(m.items,c.items);const sm=new Map((m.sessions||[]).map(s=>[s.id,s]));(c.sessions||[]).forEach(s=>{if(!sm.has(s.id))sm.set(s.id,s)});m.sessions=[...sm.values()];['no','year','court','circuit','client','opp','notes','status','mw','chk'].forEach(f=>{if(!m[f]&&c[f])m[f]=c[f]})}});set('lists',l)}
  const bd=pj('dls');if(Array.isArray(bd)){const l=bkGet('dls')||[];bd.forEach(x=>{if(!l.some(y=>y.id==x.id))l.push(x)});set('dls',l)}
+ ['pa','acc'].forEach(k=>{const b=pj(k);if(Array.isArray(b)){const l=bkGet(k)||[];b.forEach(x=>{if(!l.some(y=>y.id==x.id))l.push(x)});set(k,l)}});
  const bc=pj('cnt');if(bc&&typeof bc=='object'){const l=bkGet('cnt')||{};for(const i in bc)l[i]=Math.max(l[i]||0,bc[i]||0);set('cnt',l)}
  ['fp','fc'].forEach(k=>{const x=pj(k);if(x&&typeof x=='object'){const l=bkGet(k)||{};for(const i in x)if(!l[i])l[i]=x[i];set(k,l)}})}
 function bkReplace(b){BKEYS.forEach(k=>{if(k in b)localStorage.setItem(k,b[k]);else localStorage.removeItem(k)})}

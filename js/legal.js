@@ -1,7 +1,7 @@
 /* قائمة الأدوات + حاسبة الفوائد القانونية + بطاقة «رقم المادة» في البحث. */
 const fmtMoney=n=>n.toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2});
 function toolsSheet(){sheet(`<h2 class="sht">🧰 الأدوات</h2><div class="acts">
-<button class="btn span2" data-act="dp">🗂 تجهيز المستندات (صور وPDF)</button><button class="btn span2" data-act="mw">🕌 حاسبة المواريث</button><button class="btn" data-act="guide">🧭 ماذا أفعل؟</button><button class="btn" data-act="calc">📅 حاسبة المواعيد</button>
+<button class="btn span2" data-act="dp">🗂 تجهيز المستندات (صور وPDF)</button><button class="btn" data-act="fees">💰 الأتعاب والحسابات</button><button class="btn" data-act="poa">📜 أرشيف التوكيلات</button><button class="btn span2" data-act="mw">🕌 حاسبة المواريث</button><button class="btn" data-act="guide">🧭 ماذا أفعل؟</button><button class="btn" data-act="calc">📅 حاسبة المواعيد</button>
 <button class="btn" data-act="int">💰 حاسبة الفوائد</button><button class="btn" data-act="dir">📍 دليل العناوين</button>
 <button class="btn" data-act="agenda">🗓 الأجندة</button><button class="btn" data-act="bk">💾 نسخة احتياطية</button><button class="btn" data-act="lock">🔒 قفل التطبيق</button><button class="btn" data-act="upd">🔄 تحقق من تحديث</button></div>`)}
 /* ---------- الفوائد القانونية (م 226 و227 و232 مدني) ---------- */

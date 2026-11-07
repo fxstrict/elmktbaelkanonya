@@ -53,7 +53,7 @@ function relatedHtml(id){const d=byId[id];if(!d||NOREL.includes(d[2]))return'';
  const R=D.filter(x=>x!==d&&x.b==d.b&&!NOREL.includes(x[2])&&(d.p!='عام'?x.p==d.p:(x.s&&x.s==d.s))).sort((a,b)=>{const i=TORD.indexOf(a.t),j=TORD.indexOf(b.t);return(i<0?99:i)-(j<0?99:j)||(a[1]<b[1]?-1:1)}).slice(0,6);
  if(!R.length)return'';return '<div class="shm" style="margin:14px 0 6px">صيغ مرتبطة بنفس الموضوع</div>'+R.map(x=>`<div class="pr" data-act="open" data-id="${x[0]}" style="cursor:pointer"><span>${x[1]}</span><small>${x.t}</small></div>`).join('')}
 /* ---------- الرئيسية ---------- */
-function homeExtras(){let h=sessBanner();const soon=DLS.map(x=>({...x,n:daysLeft(parseD(x.end))})).filter(x=>x.n>=0&&x.n<=14).sort((a,b)=>a.n-b.n);
+function homeExtras(){let h=sessBanner()+(typeof poaBanner=='function'?poaBanner():'');const soon=DLS.map(x=>({...x,n:daysLeft(parseD(x.end))})).filter(x=>x.n>=0&&x.n<=14).sort((a,b)=>a.n-b.n);
  if(soon.length)h+=`<div class="dlw" data-act="calc">⏰ <b>${esc2(soon[0].title)}</b> — ${soon[0].n==0?'ينتهي اليوم':'باقي '+soon[0].n+' يوم'}${soon.length>1?' (+'+(soon.length-1)+' مواعيد أخرى)':''}</div>`;
  h+=bkBanner();
  const top=Object.entries(CNT).filter(([i,n])=>n>=2&&byId[i]).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>byId[x[0]]);
