@@ -1,5 +1,5 @@
 /* نسخة احتياطية لبياناتك على الجهاز (قضايا وجلسات ومواعيد ومفضلة وإعدادات) واستعادتها أو دمجها. */
-const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme','pa','acc'];
+const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme','pa','acc','lic','trial0','fillm'];
 let BKP=null;
 const bkGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const bkDays=()=>{const s=localStorage.getItem('lastbk');return s?Math.floor((today12()-parseD(s))/864e5):null};
@@ -21,15 +21,15 @@ function bkMerge(b){const pj=k=>{try{return JSON.parse(b[k])}catch(e){return nul
  ['pa','acc'].forEach(k=>{const b=pj(k);if(Array.isArray(b)){const l=bkGet(k)||[];b.forEach(x=>{if(!l.some(y=>y.id==x.id))l.push(x)});set(k,l)}});
  const bc=pj('cnt');if(bc&&typeof bc=='object'){const l=bkGet('cnt')||{};for(const i in bc)l[i]=Math.max(l[i]||0,bc[i]||0);set('cnt',l)}
  ['fp','fc'].forEach(k=>{const x=pj(k);if(x&&typeof x=='object'){const l=bkGet(k)||{};for(const i in x)if(!l[i])l[i]=x[i];set(k,l)}})}
-function bkReplace(b){BKEYS.forEach(k=>{if(k in b)localStorage.setItem(k,b[k]);else localStorage.removeItem(k)})}
+function bkReplace(b){BKEYS.filter(k=>k!='lic'&&k!='trial0').forEach(k=>{if(k in b)localStorage.setItem(k,b[k]);else localStorage.removeItem(k)})}
 function bkBanner(){const dd=bkDays(),x=localStorage.getItem('bkx'),has=(typeof CLS!='undefined'&&CLS.length)||(typeof DLS!='undefined'&&DLS.length);
  if(!has)return'';if(x&&Math.floor((today12()-parseD(x))/864e5)<14)return'';if(dd!=null&&dd<=30)return'';
  return `<div class="dlw" data-act="bk">💾 ${dd==null?'لم تحفظ نسخة احتياطية من قضاياك بعد':'آخر نسخة احتياطية منذ '+dd+' يوماً'} — اضغط للحفظ <button class="lnk" data-act="bkx" style="float:left">لاحقاً</button></div>`}
 document.addEventListener('click',async e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;
  if(a=='bk')bkSheet();else if(a=='bkexp')await bkExport();
  else if(a=='bkx'){e.stopPropagation();try{localStorage.setItem('bkx',isoD(new Date()))}catch(x){}render()}
- else if(a=='bkmerge'&&BKP){bkMerge(BKP.d);toast('تم دمج البيانات',2000);setTimeout(()=>location.reload(),700)}
- else if(a=='bkrep'&&BKP&&confirm('سيتم استبدال كل بياناتك الحالية ببيانات النسخة. هل أنت متأكد؟')){bkReplace(BKP.d);toast('تمت الاستعادة',2000);setTimeout(()=>location.reload(),700)}});
+ else if(a=='bkmerge'&&BKP){bkMerge(BKP.d);if(typeof proRestore=='function')await proRestore(BKP.d);toast('تم دمج البيانات',2000);setTimeout(()=>location.reload(),700)}
+ else if(a=='bkrep'&&BKP&&confirm('سيتم استبدال كل بياناتك الحالية ببيانات النسخة. هل أنت متأكد؟')){bkReplace(BKP.d);if(typeof proRestore=='function')await proRestore(BKP.d);toast('تمت الاستعادة',2000);setTimeout(()=>location.reload(),700)}});
 document.addEventListener('change',async e=>{if(e.target.id!='bkf')return;const f=e.target.files[0];if(!f)return;const p=bkParse(await f.text());
  if(!p){toast('الملف ليس نسخة صالحة من المكتبة',3500);return}BKP=p;
  sheet(`<h2 class="sht">📂 استعادة نسخة</h2><div class="shm">تاريخ النسخة: ${esc2((p.date||'').slice(0,10)||'غير معروف')}<br>تحتوي: ${bkCount(p.d)}</div><div class="acts one"><button class="btn pri" data-act="bkmerge">🔀 دمج مع بياناتي الحالية (الأسلم)</button><button class="btn" data-act="bkrep">♻️ استبدال بياناتي بالنسخة</button></div><div class="shm" style="margin-top:10px">الدمج يضيف ما هو ناقص دون حذف شيء. الاستبدال يمسح بياناتك الحالية ويضع النسخة مكانها.</div>`)});

@@ -5,7 +5,7 @@ const vnum=v=>String(v).split('.').map(Number),vcmp=(a,b)=>{a=vnum(a);b=vnum(b);
 const updBusy=()=>{const s=document.querySelector('#sh'),a=document.activeElement;return !!((s&&s.classList&&s.classList.contains('open'))||(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName||'')))};
 function showUpd(v){if(document.querySelector('#upd'))return;const b=document.createElement('div');b.id='upd';b.className='upd';
  b.innerHTML=`<span>🔔 يتوفر إصدار جديد (${v}) — أنت على ${APP.version}</span><button data-act="updnow">تحديث الآن</button><button class="x" data-act="updx" aria-label="إغلاق">✕</button>`;document.body.appendChild(b)}
-async function checkUpdate(manual){try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();
+async function checkUpdate(manual){try{if(!manual&&navigator.onLine===false)return;const r=await fetchT('version.json?t='+Date.now(),{cache:'no-store'},5000);if(!r.ok)throw 0;const j=await r.json();
  if(vcmp(j.version,APP.version)>0){let t=null;try{t=JSON.parse(localStorage.getItem('upd_try'))}catch(e){}
   const recent=t&&t.v===j.version&&Date.now()-t.t<10*60*1000;
   if(!manual&&!recent&&!updBusy())applyUpdate(j.version);else showUpd(j.version)}
