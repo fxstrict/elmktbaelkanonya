@@ -1,0 +1,21 @@
+/* فحص جاهزية الإطلاق (L1):  node tools/launch-check.js  — يطبع ما ينقص قبل ضبط PRO.enabled=true */
+const fs=require('fs'),vm=require('vm');
+const cfg=fs.readFileSync('js/config.js','utf8');
+const ctx=vm.createContext({});vm.runInContext(cfg+';this.PRO=PRO;this.EVENT=EVENT;this.SPONSORS=SPONSORS;',ctx);
+const {PRO,EVENT,SPONSORS}=ctx;
+let must=0;const R=(lvl,ok,msg)=>{console.log((ok?'✓ ':lvl=='must'?'✗ ':'△ ')+msg);if(!ok&&lvl=='must')must++};
+const ver=JSON.parse(fs.readFileSync('version.json','utf8')).version;
+R('must',/^[A-Za-z0-9_-]{87}$/.test(PRO.pub||''),'المفتاح العام PRO.pub مضبوط (65 بايت base64url = 87 حرفاً؛ بدونه لن يُقبل أي كود)');
+R('must',!!(PRO.wa||PRO.insta||PRO.wallet||PRO.bank||PRO.pay),'وسيلة دفع/تواصل واحدة على الأقل (wa/insta/wallet/bank/pay) — مهمة T3');
+R('must',!!PRO.wa,'رقم واتساب PRO.wa للاستلام والتجديد');
+R('must',PRO.price>0&&PRO.priceNext>0,'الأسعار مضبوطة');
+R('warn',PRO.foundersSold<PRO.founders,'مقاعد المؤسسين متبقية (foundersSold < founders)');
+R('warn',fs.existsSync('data/revoked.json'),'ملف data/revoked.json موجود');
+R('warn',SPONSORS.every(s=>s.nl===true),'كل راعٍ مُقرّ بـ nl:true (غير محامٍ)');
+R('warn',!EVENT.title||!!EVENT.date,'الندوة: إن كُتب العنوان فالموعد إلزامي');
+const sw=fs.readFileSync('sw.js','utf8'),ix=fs.readFileSync('index.html','utf8'),c1=cfg;
+R('must',[sw.includes("siyagh-v"+ver),ix.includes('?v='+ver),c1.includes(ver)].every(Boolean),'الإصدار '+ver+' متطابق في version/sw/index/config');
+const files=[...ix.matchAll(/src="([^"?]+)\?v=/g)].map(m=>m[1]);
+R('must',files.every(f=>fs.existsSync(f)&&sw.includes('"'+f+'"')),'كل سكربتات index موجودة ومُدرجة في sw.js');
+console.log('\nPRO.enabled الحالي = '+PRO.enabled+(must?'  ← لا تفعّله بعد: '+must+' بند(ود) ناقص':'  ← الجاهزية مكتملة، يمكن الإطلاق'));
+process.exit(must?1:0);
