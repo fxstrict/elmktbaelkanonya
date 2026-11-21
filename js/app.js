@@ -23,7 +23,7 @@ function list(){const b=S.tab=='fav'?FAV.map(i=>byId[i]).filter(Boolean):S.tab==
  if(!L.length&&p&&p.ws.length>1){L=b.filter(fl).map(d=>[d,score(d,p,true)]).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);L.near=L.length>0}
  return L}
 const row=d=>{const f=FAV.includes(d[0]);return `<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${BK.has(d[0])?'⚠️ ':''}${d[1]}</div><div class="rm">${d.t} · ${d.b}${d.p!='عام'?' · '+d.p:''}${ALT[d[0]]?' · '+(ALT[d[0]].length+1)+' نسخ':''}</div></div><button class="st ${f?'on':''}" data-act="fav" data-id="${d[0]}" aria-label="مفضلة">${f?'★':'☆'}</button></div>`};
-function render(){
+function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن محكمة أو نيابة…':S.tab=='lib'&&typeof lvPh=='function'?lvPh():'ابحث في '+D.length+' صيغة…'}
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab));
  $('#fe').textContent=CLS.length||'';$('#fn').textContent=nf()||'';$('#fn').hidden=!nf();$('#clr').hidden=!S.q;
  const all=S.tab=='all',gn=FA.find(x=>x[0]==S.g)[1];
@@ -31,7 +31,8 @@ function render(){
  const act=Object.entries(S.f).filter(([k,v])=>v&&k!='t');
  $('#af').hidden=!(all&&act.length);$('#af').innerHTML=act.map(([k,v])=>`<button class="chip x" data-act="rm" data-k="${k}">${v} ✕</button>`).join('')+(act.length>1?'<button class="chip" data-act="fclear">مسح الكل</button>':'');
  const m=$('#m');if(obs)obs.disconnect();
- if(S.tab=='lib'){const q=nz(S.q.trim());let h='';LIB.forEach(([g,items])=>{const it=items.filter(x=>!q||nz(x[1]).includes(q));if(it.length)h+=`<div class="bar2"><b>${g}</b><span>${it.length}</span></div><div class="grid">`+it.map(x=>`<a class="cat" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${x[0]}"><span class="ci">${x[2]}</span><b>${x[1]}</b><span>فتح القسم ↗</span></a>`).join('')+'</div>'});m.innerHTML=h||'<div class="em"><div>🔎</div>لا توجد أقسام مطابقة</div>'}
+ if(S.tab=='bc')m.innerHTML=typeof bcHtml=='function'?bcHtml():'';
+ else if(S.tab=='lib')m.innerHTML=liveHtml();
  else if(S.tab=='fav')m.innerHTML=casesView();
  else if(S.tab=='home'){const c={};D.forEach(d=>c[d[S.g]]=(c[d[S.g]]||0)+1);
   m.innerHTML=homeExtras()+`<div class="bar2"><span>تصفّح حسب</span><button class="pill" data-act="gmenu">${gn} ▾</button></div><div class="grid">`+Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`<button class="cat" data-act="cat" data-v="${v}"><span class="ci">${icon(S.g,v)}</span><b>${v}</b><span>${n} صيغة</span></button>`).join('')+'</div>'}
@@ -49,7 +50,7 @@ const wa=t=>'https://wa.me/'+CONTACT.wa+'?text='+encodeURIComponent(t);
 function partsSheet(id){const d=byId[id];sheet(`<h2 class="sht">${d[1]}</h2><div class="shm">${d.t} · ${d.b} · ${d.p}</div><div class="acts one"><a class="btn pri" data-act="rec" data-id="${id}" target="_blank" rel="noopener" href="${pv(id)}">📂 فتح الموسوعة بكامل أجزائها</a></div><h3 class="sht" style="margin:16px 0 6px">الأجزاء (${PARTS[id].length})</h3>`+PARTS[id].map(([pid,nm])=>`<div class="pr"><span>${nm}</span><a class="pb" data-act="rec" data-id="${id}" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${pid}/preview" aria-label="معاينة">👁</a><a class="pb" data-act="rec" data-id="${id}" href="https://drive.usercontent.google.com/download?id=${pid}&export=download&confirm=t" aria-label="تحميل">⬇</a></div>`).join('')+`<div class="acts" style="margin-top:12px"><button class="btn span2" data-act="addto" data-id="${id}">➕ إضافة إلى قائمة قضية</button><button class="btn" data-act="share" data-id="${id}">📤 مشاركة</button><a class="btn" target="_blank" rel="noopener" href="${wa('أبلغ عن ملاحظة على موسوعة في المكتبة القانونية:\n'+d[1])}">⚠️ إبلاغ عن خطأ</a></div>`)}
 function itemSheet(id){bumpOpen(id);if(isEnc(id))return partsSheet(id);const d=byId[id],dlo=d[1].includes('تحميل فقط');
  const al=ALT[id]||[];
- sheet(`<h2 class="sht">${d[1]}</h2><div class="shm">${d.t} · ${d.b} · ${d.p} · ${d.j}</div>${BK.has(id)?'<div class="wn">⚠️ تعذّر التحقق من رابط هذه الصيغة في آخر فحص؛ قد يكون محذوفاً أو غير مشارك. يمكنك الإبلاغ بالزر أسفله.</div>':''}<div class="acts">${dlo?'':`<a class="btn pri" data-act="rec" data-id="${id}" target="_blank" rel="noopener" href="${pv(id)}">👁 معاينة</a>`}<a class="btn${dlo?' pri span2':''}" data-act="rec" data-dl="1" data-id="${id}" href="${dl(id)}">⬇ تحميل الملف</a>${dlo||'bqkxv'.includes(d[2])?'':`<button class="btn acc span2" data-act="fill" data-id="${id}">✍️ تعبئة بياناتك وتنزيل Word</button>`}<button class="btn${DLT.includes(d.t)?'':' span2'}" data-act="addto" data-id="${id}">➕ إضافة إلى قائمة قضية</button>${DLT.includes(d.t)?`<button class="btn" data-act="calc" data-b="${d.b}">📅 حاسبة المواعيد</button>`:''}<button class="btn" data-act="copy" data-id="${id}">🔗 نسخ الرابط</button><button class="btn" data-act="share" data-id="${id}">📤 مشاركة</button><a class="btn wide2" target="_blank" rel="noopener" href="${wa('أبلغ عن ملاحظة على صيغة في المكتبة القانونية:\n'+d[1]+'\n'+pv(id))}">⚠️ إبلاغ عن خطأ أو ملاحظة</a></div>${al.length?'<div class="shm" style="margin:14px 0 6px">نسخ أخرى من هذه الصيغة</div><div class="acts one">'+al.map(a=>`<button class="btn" data-act="open" data-id="${a[0]}">${a[1]}</button>`).join('')+'</div>':''}${relatedHtml(id)}`)}
+ sheet(`<h2 class="sht">${d[1]}</h2><div class="shm">${d.t} · ${d.b} · ${d.p} · ${d.j}</div>${BK.has(id)?'<div class="wn">⚠️ تعذّر التحقق من رابط هذه الصيغة في آخر فحص؛ قد يكون محذوفاً أو غير مشارك. يمكنك الإبلاغ بالزر أسفله.</div>':''}<div class="acts">${dlo?'':`<a class="btn pri" data-act="rec" data-id="${id}" target="_blank" rel="noopener" href="${pv(id)}">👁 معاينة</a>`}<a class="btn${dlo?' pri span2':''}" data-act="rec" data-dl="1" data-id="${id}" href="${dl(id)}">⬇ تحميل الملف</a>${dlo||'bqkxv'.includes(d[2])?'':`<button class="btn acc span2" data-act="fill" data-id="${id}">✍️ تعبئة بياناتك وتنزيل Word</button>`}<button class="btn${DLT.includes(d.t)?'':' span2'}" data-act="addto" data-id="${id}">➕ إضافة إلى قائمة قضية</button>${DLT.includes(d.t)?`<button class="btn" data-act="calc" data-b="${d.b}">📅 حاسبة المواعيد</button>`:''}<button class="btn" data-act="copy" data-id="${id}">🔗 نسخ رابط المشاركة</button><button class="btn" data-act="share" data-id="${id}">📤 مشاركة</button><a class="btn wide2" target="_blank" rel="noopener" href="${wa('أبلغ عن ملاحظة على صيغة في المكتبة القانونية:\n'+d[1]+'\n'+pv(id))}">⚠️ إبلاغ عن خطأ أو ملاحظة</a></div>${al.length?'<div class="shm" style="margin:14px 0 6px">نسخ أخرى من هذه الصيغة</div><div class="acts one">'+al.map(a=>`<button class="btn" data-act="open" data-id="${a[0]}">${a[1]}</button>`).join('')+'</div>':''}${relatedHtml(id)}`)}
 function contactSheet(){sheet(`<h2 class="sht">تواصل مع المكتبة القانونية</h2><div class="shm">للاستفسار، أو إرسال صيغ جديدة لمراجعتها وإضافتها</div><div class="acts one"><a class="btn pri" target="_blank" rel="noopener" href="${wa('السلام عليكم، أرغب في الاستفسار بخصوص المكتبة القانونية.')}">💬 محادثة واتساب مباشرة</a><a class="btn" target="_blank" rel="noopener" href="${wa('السلام عليكم، لدي صيغة جديدة أرغب في مشاركتها لمراجعتها وإضافتها إلى المكتبة القانونية. سأرسل الملف في هذه المحادثة.')}">📤 مشاركة صيغة جديدة للمراجعة</a><a class="btn" href="mailto:${CONTACT.mail}?subject=${encodeURIComponent('المكتبة القانونية - مراسلة')}">✉️ مراسلة بالبريد الإلكتروني</a><a class="btn" href="tel:${CONTACT.phone}">📞 اتصال ${CONTACT.phone}</a></div><div class="shm" style="margin:14px 0 0">${CONTACT.mail}</div>`)}
 function filterSheet(open){const sc=$('.fl')?$('.fl').scrollTop:0;
  const body=FA.map(([k,l,ic])=>{const c={};D.forEach(d=>{if(match(d,k)&&qm(d))c[d[k]]=(c[d[k]]||0)+1});const o=Object.entries(c).sort((a,b)=>b[1]-a[1]);if(S.f[k]&&!c[S.f[k]])o.unshift([S.f[k],0]);
@@ -60,7 +61,7 @@ function groupSheet(){sheet('<h2 class="sht">تصفّح حسب</h2>'+FA.map(([k,
 function addRec(id){REC=[id,...REC.filter(x=>x!=id)].slice(0,40);sv('rec',REC)}
 function copy(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('تم نسخ الرابط'),()=>toast(t));else toast(t)}
 function applyTheme(){const r=document.documentElement;TH=='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',TH);$('#theme').textContent={auto:'🌓',dark:'🌙',light:'☀️'}[TH]}
-function go(tab){if(tab=='fav')S.cl=null;S.tab=tab;S.n=40;render();scrollTo(0,0)}
+function go(tab){if(tab=='fav')S.cl=null;if(tab=='lib'&&typeof LV!='undefined'){LV.stack=[];LV.cur=null}S.tab=tab;S.n=40;render();scrollTo(0,0)}
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act,id=el.dataset.id,k=el.dataset.k,v=el.dataset.v;
  if(a=='rec'){addRec(id);if(el.dataset.dl)dlFeedback(el);return}
  if(a=='fill'&&typeof fillOpen=='undefined'){toast('حدّث الصفحة (إعادة تحميل كاملة) ثم أعد المحاولة',3500);return}
@@ -76,8 +77,8 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
  else if(a=='fset'){S.f[k]=S.f[k]==v?'':v;S.n=40;if(S.tab=='home')S.tab='all';render();filterSheet(k)}
  else if(a=='gmenu')groupSheet();
  else if(a=='gset'){S.g=k;closeSheet();render()}
- else if(a=='copy'){copy(pv(id))}
- else if(a=='share'){const d=byId[id];if(navigator.share)navigator.share({title:d[1],url:pv(id)}).catch(()=>{});else copy(pv(id))}
+ else if(a=='copy'){shCopy(shItemUrl(id))}
+ else if(a=='share'){shItem(id)}
  else if(a=='recclr'){REC=[];sv('rec',REC);render()}
  else if(a=='theme'){TH=TH=='auto'?'dark':TH=='dark'?'light':'auto';sv('theme',TH);applyTheme()}
  else if(a=='clr'){$('#q').value='';S.q='';render()}
@@ -86,6 +87,6 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
 $('#q').addEventListener('input',e=>{S.q=e.target.value;S.n=40;if(S.q.trim()&&S.tab=='home')S.tab='all';render()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape')closeSheet()});
 $('#q').placeholder='ابحث في '+D.length+' صيغة…';$('#cnt').textContent='صحف وصيغ ونماذج · '+D.length+' ملفاً';
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update()}catch(e){}}).catch(()=>{});
 const v=$('#ver');if(v)v.textContent='الإصدار '+APP.version;
 applyTheme();render();
