@@ -39,5 +39,6 @@ document.addEventListener('click',async e=>{const pd=e.target.closest('[data-pd]
  else if(a=='lkchg'){closeSheet();if(await checkCur()){if(await setPin())lockSheet()}else lockSheet()}
  else if(a=='lkoff'){closeSheet();if(await checkCur()){put(null);ss().removeItem('unl');toast('تم إلغاء القفل')}lockSheet()}
  else if(a=='lknow'){ss().removeItem('unl');closeSheet();show()}});
+window.llHasPin=()=>!!get();window.llCheckPin=checkCur;
 if(get()&&!ss().getItem('unl'))show();
 })();
