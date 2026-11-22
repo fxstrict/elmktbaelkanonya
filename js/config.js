@@ -1,5 +1,5 @@
 /* إعدادات التطبيق — الإصدار الأول */
-const APP={version:'1.14.2',name:'المكتبة القانونية'};
+const APP={version:'1.17.0',name:'المكتبة القانونية'};
 /* بيانات التواصل (واتساب / بريد) */
 const CONTACT={wa:'201016000360',phone:'01016000360',mail:'hossammohamedlawyer@gmail.com'};
 /* أنواع الصيغ: الرمز → الاسم (الرمز يُكتب في ملفات data/) */
@@ -21,5 +21,7 @@ const PRO={enabled:true,pub:'BOevJtwBrTY1clJuTBtFXjBSI_R0ivkevY8cFPAigC_HFiBa6Dh
 const SPONSORS=[];
 /* الندوة (P7) — تُملأ عند تحديد الموعد (T1). فارغة = لا بانر. title وdate إلزاميان؛ date بتوقيت جهاز المستخدم (YYYY-MM-DDTHH:MM)؛ end اختياري (الافتراضي +ساعتان)؛ url رابط التسجيل https؛ host مثل «بتأييد نقابة المحامين الفرعية بـ…»؛ price=0 مجانية. بعد end يختفي البانر ويظهر عرض الترقية لحاملي تذكرة الندوة. */
 const EVENT={title:'',date:'',end:'',place:'',price:0,url:'',host:''};
+/* عنوان موقعك الأساسي لروابط المشاركة (اختياري). فارغ = يُؤخذ تلقائياً من عنوان الصفحة. مثال: 'https://اسمك.github.io/legal-library/' */
+const SHARE_SITE='';
 /* fetch بمهلة: لا يعلّق التطبيق على شبكة ضعيفة أو منقطعة */
 function fetchT(u,o,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||8000);return fetch(u,Object.assign({},o||{},{signal:c.signal})).finally(()=>clearTimeout(t))}

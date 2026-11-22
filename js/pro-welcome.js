@@ -18,7 +18,7 @@ function wlSheet(k,s){const price=typeof proPrice=='function'?proPrice():PRO.pri
  t=k=='trial'?`⏳ تنتهي تجربتك خلال ${s.daysLeft} ${s.daysLeft==1?'يوم':'أيام'}`:k=='ended'?'⌛ انتهت فترة التجربة':'👋 مرحباً بك في المكتبة القانونية',
  d=k=='free'?'المكتبة والبحث والصيغ والأجندة وحاسبة المواعيد والنسخة الاحتياطية <b>مجانية دائماً</b>. أما <b>Pro</b> فيضيف: المواريث، الأتعاب والحسابات، تجهيز المستندات (التصدير)، تعبئة بلا حدود، وقضايا وتوكيلات غير محدودة.':'المزايا المجانية وبياناتك كما هي. اشترك في Pro لتستمر مزايا المواريث والأتعاب والتصدير والتعبئة غير المحدودة.';
  sheet(`<h2 class="sht">${t}</h2><div class="pst"><div>${d}</div></div><div class="acts"><button class="btn pri span2" data-act="prosub">💳 اشترك الآن — ${price} جنيه / سنة</button>${k=='free'?'<button class="btn span2" data-act="wltrial">🎁 جرّب '+(PRO.trialDays||14)+' يوماً مجاناً</button>':''}<button class="btn" data-act="pro">🔑 لديّ كود</button><button class="btn" data-act="pgclose">${k=='free'?'متابعة بالمجاني':'لاحقاً'}</button></div>`)}
-function wlOpen(tries){tries=tries||0;if(typeof PRO=='undefined'||!PRO.enabled)return;
+function wlOpen(tries){tries=tries||0;if(typeof PRO=='undefined'||!PRO.enabled||window._shArr)return;
  if(document.querySelector('#lk')||(document.querySelector('#sh')||{classList:{contains:()=>false}}).classList.contains('open')){if(tries<240)setTimeout(()=>wlOpen(tries+1),500);return}
  const s=proStatus(),k=wlKind(s);if(!k)return;const d=wlDay();
  if(k=='free'){if(_l('wlc','')){return}_s('wlc',d)}

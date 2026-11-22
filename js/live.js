@@ -33,7 +33,7 @@ function lvHome(){const q=nz((S.q||'').trim());let h=lvSetupBanner();
  if(lvKey()){const t=LV.idx?`آخر فهرسة: ${new Date(LV.idx.t).toLocaleDateString('ar-EG')} — ${LV.idx.idx.length} عنصر`:'غير مفهرسة بعد';h+=`<div class="cp" style="margin-top:12px"><div class="cph"><b>🔎 البحث الشامل</b></div><div class="shm">${LV.busy?esc2(LV.prog):'الفهرسة تقرأ أسماء كل ملفات المكتبة مرة واحدة فيصبح البحث في الخانة العلوية شاملاً لكل الأقسام ('+t+').'}</div><div class="acts"><button class="btn${LV.busy?' busy':''}" data-act="lvcrawl">${LV.idx?'🔄 تحديث الفهرسة':'▶ فهرسة المكتبة'}</button><button class="btn" data-act="lvsetup">⚙️ إعداد الاتصال</button></div></div>`}
  return h||'<div class="em"><div>🔎</div>لا توجد أقسام مطابقة</div>'}
 function lvFolderHtml(){const top=LV.stack[LV.stack.length-1],c=LV.cur,q=nz((S.q||'').trim());
- let h=`<div class="bar2"><button class="lnk" data-act="lvback">← رجوع</button><b style="flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${LV.stack.map(x=>esc2(x.n)).join(' › ')}</b></div>`;
+ let h=`<div class="bar2"><button class="lnk" data-act="lvback">← رجوع</button><b style="flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${LV.stack.map(x=>esc2(x.n)).join(' › ')}</b><button class="lnk" data-act="shfolder">📤 مشاركة</button></div>`;
  if(!c||c.loading)return h+'<div class="em"><div>⏳</div>جارٍ تحميل المحتوى…</div>';
  if(c.err)return h+`<div class="wn">${c.err==403?'رفض درايف الطلب (403): تأكد أن المجلد مشارك «لأي شخص لديه الرابط»، وأن Drive API مفعّل، وأن المفتاح يسمح بنطاق موقعك.':c.err==400?'مفتاح Drive API غير صحيح.':c.err==404?'المجلد غير موجود.':'تعذّر الاتصال بدرايف — تأكد من الإنترنت.'} <button class="lnk" data-act="lvsetup">إعداد الاتصال</button></div>`;
  const fl=c.folders.filter(f=>!q||nz(f.n).includes(q)),fi=c.files.filter(f=>!q||nz(f.n).includes(q));
@@ -45,7 +45,7 @@ function lvFolderHtml(){const top=LV.stack[LV.stack.length-1],c=LV.cur,q=nz((S.q
 function lvSearchHtml(q){const ws=q.split(/\s+/).filter(Boolean),R=LV.idx.idx.filter(e=>{if(e.nn===undefined)e.nn=nz(e[1]+' '+e[2]);return ws.every(w=>e.nn.includes(w))}).sort((a,b)=>b[3]-a[3]).slice(0,100);
  LV.found=R;return `<div class="bar2"><b>نتائج البحث الشامل</b><span>${R.length}${R.length==100?'+':''}</span></div>`+(R.length?R.map((e,i)=>`<div class="pr" data-act="lvres" data-i="${i}" style="cursor:pointer"><span>${e[3]?'📁':'📄'} <b>${esc2(e[3]?e[1]:lvName({n:e[1]}))}</b><br><small>${esc2(e[2])}</small></span></div>`).join(''):'<div class="em"><div>🔎</div>لا نتائج</div>')}
 function liveHtml(){return LV.stack.length?lvFolderHtml():lvHome()}
-function lvFileSheet(f){sheet(`<h2 class="sht">${esc2(lvName(f))}</h2><div class="shm">${lvType(f)}${f.s?' · '+lvSize(f.s):''}${f.t?' · آخر تعديل '+f.t.slice(0,10):''}</div><div class="acts"><button class="btn pri span2" data-act="lvread" data-id="${f.id}">📖 قراءة داخل التطبيق</button><a class="btn" data-act="rec" data-dl="1" href="${lvDl(f)}">⬇ تحميل الملف</a><button class="btn span2" id="lvsv" data-act="lvsave" data-id="${f.id}">💾 حفظ على الجهاز (للفتح بلا إنترنت)</button><button class="btn" data-act="lvcopy" data-id="${f.id}">🔗 نسخ الرابط</button></div>`);LV.file=f;
+function lvFileSheet(f){sheet(`<h2 class="sht">${esc2(lvName(f))}</h2><div class="shm">${lvType(f)}${f.s?' · '+lvSize(f.s):''}${f.t?' · آخر تعديل '+f.t.slice(0,10):''}</div><div class="acts"><button class="btn pri span2" data-act="lvread" data-id="${f.id}">📖 قراءة داخل التطبيق</button><a class="btn" data-act="rec" data-dl="1" href="${lvDl(f)}">⬇ تحميل الملف</a><button class="btn span2" id="lvsv" data-act="lvsave" data-id="${f.id}">💾 حفظ على الجهاز (للفتح بلا إنترنت)</button><button class="btn" data-act="lvcopy" data-id="${f.id}">🔗 نسخ رابط المشاركة</button><button class="btn" data-act="lvshare">📤 مشاركة</button></div>`);LV.file=f;
  lvSavedMark(f)}
 /* حفظ الملف على الجهاز (IndexedDB) ليُفتح لاحقاً بلا إنترنت */
 const lvDocx='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -77,7 +77,7 @@ document.addEventListener('click',async e=>{const el=e.target.closest('[data-act
  else if(a=='lvsave'){const f=LV.file;if(f)lvSave(f)}
  else if(a=='lvopen'){const f=LV.file;if(f)lvOpenSaved(f)}
  else if(a=='lvfback'){if(LV.file)lvFileSheet(LV.file)}
- else if(a=='lvcopy'){const f=LV.file;if(f&&navigator.clipboard)navigator.clipboard.writeText(lvPv(f)).then(()=>toast('تم نسخ الرابط'),()=>toast('تعذّر النسخ'))}
+ else if(a=='lvcopy'){const f=LV.file;if(f)shCopy(shLvUrl(f))}
  else if(a=='lvres'){const r=LV.found&&LV.found[+el.dataset.i];if(!r)return;if(r[3]){LV.stack=[{id:r[0],n:r[1]}];S.q='';const i=document.querySelector('#q');if(i)i.value='';lvShow()}else lvFileSheet({id:r[0],n:r[1],m:r[4],s:r[5]})}
  else if(a=='lvsetup')lvSetup();
  else if(a=='lvsavekey'){const v=(document.querySelector('#lvk')||{}).value||'';try{localStorage.setItem('dkey',v.trim())}catch(x){}toast(v.trim()?'تم حفظ المفتاح على هذا الجهاز':'تم مسح المفتاح');render()}
