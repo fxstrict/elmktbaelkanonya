@@ -2,7 +2,7 @@
 const vm=require('vm'),fs=require('fs'),{webcrypto:wc}=require('crypto');
 const mem={};const ls={getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=String(v)},removeItem:k=>{delete mem[k]}};
 let revokedFile={revoked:[]};
-const ctx=vm.createContext({localStorage:ls,crypto:wc,TextDecoder,TextEncoder,atob,btoa,Uint8Array,DataView,Date,Math,JSON,Array,Number,String,console,
+const ctx=vm.createContext({AbortController,setTimeout,clearTimeout,Object,Promise,localStorage:ls,crypto:wc,TextDecoder,TextEncoder,atob,btoa,Uint8Array,DataView,Date,Math,JSON,Array,Number,String,console,
  fetch:async()=>({ok:true,json:async()=>revokedFile})});
 const run=f=>vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:f});
 const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
