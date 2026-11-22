@@ -6,9 +6,12 @@ const PRO_FEATURES={
  export:{t:'تجهيز المستندات (التصدير)',d:'ضغط الصور وتحويلها إلى PDF أو صور جاهزة للتقديم'},
  fill:{t:'التعبئة الآلية للصيغ',d:'التعبئة وتنزيل Word بلا حدود شهرية',limit:3,per:'شهرياً',lim:'استعملت حدّ التعبئة المجاني (3 مرات هذا الشهر)'},
  cases:{t:'قضايا غير محدودة',d:'عدد غير محدود من القضايا',limit:3,lim:'وصلت إلى حدّ القضايا المجانية (3 قضايا)'},
+ pdftools:{t:'أدوات PDF',d:'دمج وتقسيم وضغط وتنظيم وتعبئة وحماية ملفات PDF وفتحها كصفحات'},
+ ocr:{t:'التعرف على النص (OCR)',d:'استخراج النص العربي والإنجليزي من المستندات الممسوحة وتصديره Word/TXT أو PDF قابل للبحث'},
+ hlib:{t:'مكتبة مستنداتي',d:'حفظ أكثر من 5 مستندات في المكتبة المحلية بالمجلدات والوسوم',limit:5,lim:'وصلت إلى حدّ المكتبة المجاني (5 مستندات). ما حفظته يبقى متاحاً للفتح والتصدير والحذف.'},
  poa:{t:'أرشيف توكيلات موسّع',d:'أكثر من 5 توكيلات',limit:5,lim:'وصلت إلى حدّ التوكيلات المجانية (5 توكيلات)'}};
 /* مفاتيح النقر المقيَّدة → الميزة */
-const PRO_ACTS={mw:'mw',mwopen:'mw',fees:'fees',fovr:'fees',fopen:'fees',dprun:'export',fdl:'fill',frdl:'fill',lnew:'cases',poaadd:'poa',poacase:'poa'};
+const PRO_ACTS={mw:'mw',mwopen:'mw',fees:'fees',fovr:'fees',fopen:'fees',dprun:'export',ocrrun:'ocr',ocrpdf:'ocr',pxstudiorun:'pdftools',pxmgrun:'pdftools',pxsprun:'pdftools',pxcprun:'pdftools',pximrun:'pdftools',pxformrun:'pdftools',pxlockrun:'pdftools',pxosave:'pdftools',pxoext:'pdftools',fdl:'fill',frdl:'fill',lnew:'cases',poaadd:'poa',poacase:'poa'};
 const proOn=()=>typeof PRO!='undefined'&&PRO.enabled&&typeof proActive=='function';
 const proMonth=()=>new Date().toISOString().slice(0,7);
 function proFillN(){const o=_l('fillm',null);return o&&o.m==proMonth()?(+o.n||0):0}
@@ -18,6 +21,7 @@ function proAllowed(key,ctx){
  const f=PRO_FEATURES[key];if(!f)return true;
  if(key=='fill')return proFillN()<f.limit;
  if(key=='cases')return !!(ctx&&ctx.noLimit)||_l('lists',[]).length<f.limit;
+ if(key=='hlib')return !!(ctx&&ctx.noLimit)||(typeof HD!='undefined'?HD.n:0)<f.limit;
  if(key=='poa')return !!(ctx&&ctx.noLimit)||_l('pa',[]).length<f.limit;
  return false}
 /* يعرض نافذة «ميزة Pro» إن كانت مقفلة ويرجع false، وإلا true */
@@ -26,7 +30,8 @@ function proGate(key,ctx){
  const f=PRO_FEATURES[key],s=proStatus();
  const why=f.lim?`<div class="wn">${f.lim}</div>`:'';
  const st=s.state=='expired'?(s.revoked?'تم إبطال الكود السابق.':'انتهى اشتراكك أو تجربتك.'):'';
- sheet(`<h2 class="sht">⭐ ميزة Pro</h2><div class="pst"><b>${f.t}</b><div>${f.d}</div><small>${st} المكتبة والبحث والصيغ وحاسبة المواعيد والأجندة والنسخة الاحتياطية تبقى مجانية دائماً، وبياناتك محفوظة كما هي.</small></div>${why}<div class="acts"><button class="btn pri span2" data-act="prosub">💳 اشترك في Pro</button><button class="btn" data-act="pro">🔑 لديّ كود</button><button class="btn" data-act="pgclose">لاحقاً</button></div>`);
+ const nt=!_l('trial0',0);
+ sheet(`<h2 class="sht">🔒 هذه الميزة للمشتركين</h2><div class="pst"><b>${f.t}</b><div>${f.d}</div></div>${why}<div class="wn">${st||'أنت الآن على النسخة المجانية.'} لتشغيل هذه الميزة: اشترك في Pro، أو فعّل كود اشتراك${nt?'، أو جرّب '+(PRO.trialDays||14)+' يوماً مجاناً':''}.</div><div class="shm">المكتبة والبحث والصيغ والأجندة والنسخة الاحتياطية تبقى مجانية دائماً، وبياناتك محفوظة كما هي.</div><div class="acts"><button class="btn pri span2" data-act="prosub">💳 اشترك الآن</button><button class="btn" data-act="pro">🔑 لديّ كود</button>${nt?'<button class="btn" data-act="wltrial">🎁 جرّب مجاناً</button>':''}<button class="btn span2" data-act="pgclose">لاحقاً</button></div>`);
  return false}
 document.addEventListener('click',e=>{
  const el=e.target.closest('[data-act]');if(!el||!proOn())return;

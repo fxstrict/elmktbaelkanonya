@@ -7,7 +7,7 @@ const hx=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','
 let FS=null;
 async function driveBuf(id){if(typeof DRIVE_KEY=='undefined'||!DRIVE_KEY)return null;
  const m='application%2Fvnd.openxmlformats-officedocument.wordprocessingml.document',u=gd(id)?`https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=${m}&key=${DRIVE_KEY}`:`https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${DRIVE_KEY}`;
- const r=await fetch(u);if(!r.ok)throw new Error('http'+r.status);return r.arrayBuffer()}
+ const r=await fetchT(u,{},30000);if(!r.ok)throw new Error('http'+r.status);return r.arrayBuffer()}
 function pickSheet(id,msg){const d=byId[id];
  sheet(`<h2 class="sht">تعبئة: ${hx(d[1])}</h2>${msg?`<div class="wn">${msg}</div>`:''}<div class="shm">نزّل الصيغة أولاً ثم اخترها هنا ليملأ التطبيق فراغاتها، ويحفظ لك ملف Word جاهزاً على جهازك.</div><div class="acts one"><a class="btn" data-act="rec" data-dl="1" data-id="${id}" href="${dl(id)}">⬇ 1) تنزيل الصيغة الأصلية</a><label class="btn pri">📂 2) اختيار الملف الذي نزّلته<input type="file" id="fpick" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label></div>`);
  $('#fpick').onchange=async e=>{const f=e.target.files[0];if(f)start(id,await f.arrayBuffer())}}

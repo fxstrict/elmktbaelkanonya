@@ -8,7 +8,7 @@ const get=()=>{try{return localStorage.getItem(K)}catch(e){return null}},put=v=>
 /* رموز سهلة التخمين: أرقام مكررة أو متتابعة أو شائعة */
 const weak=p=>/^(\d)\1+$/.test(p)||'01234567890123456789'.includes(p)||'98765432109876543210'.includes(p)||['2580','1357','2468','1212','1122','1313','1004','2000','2024','2025','2026','0852','1379','1590'].includes(p);
 let fails=0,until=0,PAD=null;
-function wipe(){try{localStorage.clear()}catch(e){}try{indexedDB.deleteDatabase('legal-lib');indexedDB.deleteDatabase('legal-live')}catch(e){}}
+function wipe(){try{localStorage.clear()}catch(e){}try{indexedDB.deleteDatabase('legal-lib');indexedDB.deleteDatabase('legal-live');indexedDB.deleteDatabase('hscan-db')}catch(e){}}
 function padClose(){const o=document.querySelector('#lk');if(o)o.remove();document.removeEventListener('keydown',padKey,true);PAD=null}
 function padOpen(o){padClose();PAD={o,pin:'',busy:false};const d=document.createElement('div');d.id='lk';d.className='lk';
  d.innerHTML=`<div class="lkb"><div class="lkl">🔒</div><h2>${o.title}</h2><div class="lks">${o.sub||''}</div><div class="pdots" id="pdt"></div><div class="lks lkm" id="pms"></div><div class="pad" dir="ltr">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-pd="${n}">${n}</button>`).join('')}<button type="button" class="alt" data-pd="del" aria-label="مسح رقم">⌫</button><button type="button" data-pd="0">0</button><button type="button" class="alt ok" data-pd="ok" aria-label="تأكيد">✔</button></div>${o.extra||''}${o.cancel?'<button type="button" class="lnk" data-pd="cancel" style="margin-top:14px">إلغاء</button>':''}</div>`;
@@ -39,5 +39,6 @@ document.addEventListener('click',async e=>{const pd=e.target.closest('[data-pd]
  else if(a=='lkchg'){closeSheet();if(await checkCur()){if(await setPin())lockSheet()}else lockSheet()}
  else if(a=='lkoff'){closeSheet();if(await checkCur()){put(null);ss().removeItem('unl');toast('تم إلغاء القفل')}lockSheet()}
  else if(a=='lknow'){ss().removeItem('unl');closeSheet();show()}});
+window.llHasPin=()=>!!get();window.llCheckPin=checkCur;
 if(get()&&!ss().getItem('unl'))show();
 })();

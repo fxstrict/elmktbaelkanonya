@@ -36,7 +36,13 @@ document.addEventListener('click',async e=>{const el=e.target.closest('[data-act
   else{const b=document.querySelector('#pmsg'),x=proMsg(r);if(b)b.innerHTML=`<div class="pm er">${esc2(x.text)}</div>`}}
  else if(a=='propaste'){try{const t=await navigator.clipboard.readText(),i=document.querySelector('#pcode');if(i&&t){i.value=proCode(t)}else toast('الحافظة فارغة')}catch(x){toast('تعذّر اللصق — الصق يدوياً في الخانة')}}
  else if(a=='protrial'){proStartTrial();toast('بدأت التجربة ✔',2000);proSheet()}
- else if(a=='prooff'&&confirm('إلغاء التفعيل على هذا الجهاز؟ يمكنك إعادة إدخال الكود لاحقاً.')){proDeactivate();await proInit();toast('تم إلغاء التفعيل');proSheet()}});
+ else if(a=='prooff')proOffAsk();
+ else if(a=='prooffgo')await proOffGo()});
+/* إلغاء التفعيل: تحذير صريح + رمز القفل إن كان مفعّلاً (وإلا زر تأكيد) */
+function proOffAsk(){const hp=typeof llHasPin=='function'&&llHasPin(),wa='https://wa.me/'+(PRO.wa||CONTACT.wa)+'?text='+encodeURIComponent('السلام عليكم، أحتاج مساعدة في إعادة تفعيل اشتراكي في المكتبة القانونية.');
+ sheet(`<h2 class="sht">⚠️ إلغاء التفعيل</h2><div class="wn"><b>تحذير:</b> سيُمسح الكود من هذا الجهاز وتعود ميزات Pro مقفلة فوراً. لا يمكن التراجع تلقائياً: لإعادة التفعيل يجب إدخال الكود نفسه مرة أخرى، وإن لم يكن معك فتواصل مع الدعم عبر واتساب.</div><div class="shm">${hp?'سيُطلب منك رمز قفل التطبيق للتأكيد.':'نصيحة: فعّل «قفل التطبيق» برمز من الأدوات لتحمي اشتراكك من الإلغاء غير المقصود.'}</div><div class="acts"><button class="btn pri span2" data-act="pro">← تراجع</button><button class="btn span2" data-act="prooffgo">🗑 نعم، ألغِ التفعيل</button><a class="btn span2" target="_blank" rel="noopener" href="${wa}">💬 تواصل مع الدعم</a></div>`)}
+async function proOffGo(){if(typeof llHasPin=='function'&&llHasPin()){closeSheet();const ok=await llCheckPin();if(!ok){proSheet();return}}
+ proDeactivate();await proInit();toast('تم إلغاء التفعيل على هذا الجهاز',3000);proSheet()}
 /* رابط التفعيل: https://الموقع/#act=الكود — يُمسح من العنوان فور قراءته */
 async function proHash(){
  const m=/[#&]act=([^&]+)/.exec(location.hash);if(!m)return;

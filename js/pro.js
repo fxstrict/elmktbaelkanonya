@@ -31,7 +31,7 @@ async function proVerify(code){
 /* الإبطال: يقرأ data/revoked.json ({"revoked":[أرقام]}) ويحفظ نسخة محلية للعمل دون إنترنت */
 function proIsRevoked(n){const l=_proRevoked||_l('revk',[]);return l.indexOf(n)>=0}
 async function proLoadRevoked(){
- try{const r=await fetch('data/revoked.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();
+ try{const r=await fetchT('data/revoked.json?t='+Date.now(),{cache:'no-store'},4000);if(!r.ok)throw 0;const j=await r.json();
   if(j&&Array.isArray(j.revoked)){_proRevoked=j.revoked.filter(x=>Number.isInteger(x));_s('revk',_proRevoked)}}catch(e){_proRevoked=_l('revk',[])}
  return _proRevoked}
 /* التفعيل: يتحقق ثم يحفظ الكود في lic. لا يحفظ كوداً منتهياً أو مُبطَلاً */
@@ -48,9 +48,11 @@ function proTrialLeft(){const t=_l('trial0',0);if(!t)return 0;const d=(typeof PR
 /* الحالة (متزامنة): تعتمد على آخر نتيجة تحقق محفوظة في الذاكرة _proLic؛ استدعِ proInit() عند الفتح */
 let _proLic=null;
 async function proInit(){
- await proLoadRevoked();
+ _proRevoked=_l('revk',[]);
+ const slow=proLoadRevoked();
  const c=_l('lic','');_proLic=c?await proVerify(c):null;
  if(_proLic&&!_proLic.ok)_proLic=null;
+ await Promise.race([slow,new Promise(r=>setTimeout(r,2500))]);
  return proStatus()}
 function proStatus(){
  if(typeof PRO=='undefined'||!PRO.enabled)return{state:'off',daysLeft:0,label:''};
