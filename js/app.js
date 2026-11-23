@@ -23,7 +23,7 @@ function list(){const b=S.tab=='fav'?FAV.map(i=>byId[i]).filter(Boolean):S.tab==
  if(!L.length&&p&&p.ws.length>1){L=b.filter(fl).map(d=>[d,score(d,p,true)]).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);L.near=L.length>0}
  return L}
 const row=d=>{const f=FAV.includes(d[0]);return `<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${BK.has(d[0])?'⚠️ ':''}${d[1]}</div><div class="rm">${d.t} · ${d.b}${d.p!='عام'?' · '+d.p:''}${ALT[d[0]]?' · '+(ALT[d[0]].length+1)+' نسخ':''}</div></div><button class="st ${f?'on':''}" data-act="fav" data-id="${d[0]}" aria-label="مفضلة">${f?'★':'☆'}</button></div>`};
-function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='lib'&&typeof lvPh=='function'?lvPh():'ابحث في '+D.length+' صيغة…'}
+function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن محكمة أو نيابة…':S.tab=='lib'&&typeof lvPh=='function'?lvPh():'ابحث في '+D.length+' صيغة…'}
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab));
  $('#fe').textContent=CLS.length||'';$('#fn').textContent=nf()||'';$('#fn').hidden=!nf();$('#clr').hidden=!S.q;
  const all=S.tab=='all',gn=FA.find(x=>x[0]==S.g)[1];
@@ -31,7 +31,8 @@ function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='lib'&&typeof lvPh=
  const act=Object.entries(S.f).filter(([k,v])=>v&&k!='t');
  $('#af').hidden=!(all&&act.length);$('#af').innerHTML=act.map(([k,v])=>`<button class="chip x" data-act="rm" data-k="${k}">${v} ✕</button>`).join('')+(act.length>1?'<button class="chip" data-act="fclear">مسح الكل</button>':'');
  const m=$('#m');if(obs)obs.disconnect();
- if(S.tab=='lib')m.innerHTML=liveHtml();
+ if(S.tab=='bc')m.innerHTML=typeof bcHtml=='function'?bcHtml():'';
+ else if(S.tab=='lib')m.innerHTML=liveHtml();
  else if(S.tab=='fav')m.innerHTML=casesView();
  else if(S.tab=='home'){const c={};D.forEach(d=>c[d[S.g]]=(c[d[S.g]]||0)+1);
   m.innerHTML=homeExtras()+`<div class="bar2"><span>تصفّح حسب</span><button class="pill" data-act="gmenu">${gn} ▾</button></div><div class="grid">`+Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`<button class="cat" data-act="cat" data-v="${v}"><span class="ci">${icon(S.g,v)}</span><b>${v}</b><span>${n} صيغة</span></button>`).join('')+'</div>'}
