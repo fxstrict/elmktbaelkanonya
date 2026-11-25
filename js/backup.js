@@ -1,5 +1,5 @@
 /* نسخة احتياطية لبياناتك على الجهاز (قضايا وجلسات ومواعيد ومفضلة وإعدادات) واستعادتها أو دمجها. */
-const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme','pa','acc','lic','trial0','fillm'];
+const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme','pa','acc','lic','trial0','fillm','hol'];
 let BKP=null;
 const bkGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const bkDays=()=>{const s=localStorage.getItem('lastbk');return s?Math.floor((today12()-parseD(s))/864e5):null};
