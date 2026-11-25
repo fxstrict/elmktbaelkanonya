@@ -16,7 +16,7 @@ def fixtures():
     q = cv2.copyMakeBorder(cv2.resize(q, None, fx=8, fy=8, interpolation=cv2.INTER_NEAREST), 40, 40, 40, 40, cv2.BORDER_CONSTANT, value=255)
     cv2.imwrite(FX5 + '/qr.png', q)
 # (الاسم، الأمر، يقيس بعدّ ✓/✗ أم بكود الخروج)
-SUITES = [('n3-test', ['node', 'tools/n3-test.js', FX3], 'exit'), ('pro-test', ['node', 'tools/pro-test.js'], 'exit'), ('n8-test', ['node', 'tools/n8-test.js'], 'exit'), ('n9-test', ['node', 'tools/n9-test.js'], 'exit'), ('n11-test', ['node', 'tools/n11-test.js', FX11], 'count'), ('n10-test', ['node', 'tools/n10-test.js'], 'exit'), ('l0', ['python3', 'tools/l0-e2e.py'], 'count')] + \
+SUITES = [('n3-test', ['node', 'tools/n3-test.js', FX3], 'exit'), ('pro-test', ['node', 'tools/pro-test.js'], 'exit'), ('n8-test', ['node', 'tools/n8-test.js'], 'exit'), ('n9-test', ['node', 'tools/n9-test.js'], 'exit'), ('n11-test', ['node', 'tools/n11-test.js', FX11], 'count'), ('n10-test', ['node', 'tools/n10-test.js'], 'exit'), ('l3-test', ['node', 'tools/l3-test.js'], 'count'), ('l0', ['python3', 'tools/l0-e2e.py'], 'count'), ('l1', ['python3', 'tools/l1-e2e.py'], 'count'), ('l2', ['python3', 'tools/l2-e2e.py'], 'count'), ('l3', ['python3', 'tools/l3-e2e.py'], 'count'), ('l4', ['python3', 'tools/l4-e2e.py'], 'count')] + \
          [(n, ['python3', f'tools/{n}-e2e.py', FX3 if n in ('n3', 'n4') else FX11 if n == 'n11' else FX5], 'count') for n in ('n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'r1', 'r2', 'r3', 'r4')]
 want = sys.argv[1:]; rows = []; t0 = time.time(); fixtures()
 for name, cmd, mode in SUITES:
