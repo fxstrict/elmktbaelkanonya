@@ -190,3 +190,7 @@ footer a{color:var(--ac);text-decoration:none;margin:0 6px;font-weight:700}
 
 /* N10: شريط تقدّم التنفيذ وإلغاؤه */
 .dpbar{height:10px;background:var(--tint);border-radius:8px;overflow:hidden;margin:8px 0}.dpbar i{display:block;height:100%;width:0;background:var(--ac);border-radius:8px;transition:width .15s linear}
+
+/* L4: حقول كلمة مرور الخزنة (نصية بإخفاء بصري كي لا يتدخل مدير كلمات المرور) */
+input.vxin,.lkb input.vxin{display:block;width:100%;height:50px;border-radius:14px;border:1px solid var(--bd);background:var(--sf);color:inherit;text-align:center;font-size:18px;letter-spacing:0;margin:8px 0;padding:0 12px;box-sizing:border-box;-webkit-text-security:disc}
+input.vxin.show,.lkb input.vxin.show{-webkit-text-security:none}
