@@ -1,6 +1,10 @@
 /* الأتعاب والحسابات: اتفاقات الأتعاب والدفعات المستلمة والمصروفات لكل قضية، مع إيصال استلام وكشف حساب وعقد أتعاب (Word) وتقرير شهري. يُحفظ على جهازك ويدخل في النسخة الاحتياطية. */
 const ACC=_l('acc',[]),ACCK={fee:'اتفاق أتعاب',pay:'دفعة مستلمة',exp:'مصروفات'},DOCX='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const accSave=()=>_s('acc',ACC),accOf=cid=>ACC.filter(x=>x.case==cid).sort((a,b)=>(a.date+a.id)<(b.date+b.id)?-1:1);
+/* L0: رقم الإيصال يُحفظ مع الدفعة (rno) فلا يتغير بحذف دفعة سابقة. القيود القديمة بلا rno تُرقَّم مرة واحدة بترتيبها الحالي (فتبقى أرقامها كما صدرت) */
+const accNextRno=cid=>Math.max(0,...ACC.filter(x=>x.case==cid&&x.k=='pay').map(x=>x.rno||0))+1;
+function accMig(){let ch=false;[...new Set(ACC.map(x=>x.case))].forEach(cid=>{accOf(cid).filter(x=>x.k=='pay'&&!x.rno).forEach(x=>{x.rno=accNextRno(cid);ch=true})});if(ch)accSave()}
+accMig();
 const accNum=x=>{const v=parseFloat(x);return isFinite(v)&&v>0?v:0};
 function accSum(cid){const L=ACC.filter(x=>x.case==cid),s=k=>L.filter(x=>x.k==k).reduce((a,x)=>a+x.amt,0),f=s('fee'),p=s('pay'),e=s('exp');return{fees:f,pays:p,exps:e,due:f+e-p,n:L.length}}
 const fxSend=(u8,n)=>mwSend(u8,n,DOCX),fxLawyer=()=>(_l('fp',{}).lawyer||'').trim();
@@ -13,7 +17,7 @@ function feeAdd(kind){sheet(`<h2 class="sht">${kind=='fee'?'➕ اتفاق أت�
 function feesOverview(){const L=CLS.map(c=>({c,s:accSum(c.id)})).sort((a,b)=>b.s.due-a.s.due);const tot=L.reduce((a,o)=>({due:a.due+Math.max(0,o.s.due),pays:a.pays+o.s.pays}),{due:0,pays:0});
  sheet(`<h2 class="sht">💰 الأتعاب والحسابات</h2><div class="cres"><span>إجمالي المتبقي على الموكلين: <b>${fmtMoney(tot.due)}</b></span><span>إجمالي المستلم: ${fmtMoney(tot.pays)}</span></div><div class="acts"><button class="btn span2" data-act="fmon">📊 تقرير شهري</button></div>`+(L.length?L.map(o=>`<button class="mrow" data-act="fcase" data-id="${o.c.id}"><span>📁 ${esc2(o.c.name)}${o.s.n?`<br><small>${o.s.due>0.005?'المتبقي '+fmtMoney(o.s.due):o.s.due<-0.005?'زيادة '+fmtMoney(-o.s.due):'مسدَّد'}</small>`:'<br><small>لا قيود</small>'}</span><span>‹</span></button>`).join(''):'<div class="em"><div>💰</div>أنشئ ملف قضية أولاً من «قضاياي» ثم افتح حسابها.</div>'))}
 /* ---------- مستندات Word ---------- */
-function feeReceipt(id){const x=ACC.find(y=>y.id==id),c=x&&CLS.find(y=>y.id==x.case);if(!c)return;const n=accOf(c.id).filter(y=>y.k=='pay').findIndex(y=>y.id==id)+1,lw=fxLawyer()||'..............................',cl=c.client||'..............................';
+function feeReceipt(id){const x=ACC.find(y=>y.id==id),c=x&&CLS.find(y=>y.id==x.case);if(!c)return;const n=x.rno||accOf(c.id).filter(y=>y.k=='pay').findIndex(y=>y.id==id)+1,lw=fxLawyer()||'..............................',cl=c.client||'..............................';
  const B=[{t:'h',x:'إيصال استلام مبلغ'},{t:'p',x:'رقم الإيصال: '+String(n).padStart(3,'0')+' — التاريخ: '+x.date},{t:'p',x:`استلمتُ أنا الأستاذ/ ${lw} المحامي، من السيد/ ${cl}، مبلغ ${fmtMoney(x.amt)} جنيه مصري (${tafqeet(x.amt)})، وذلك ${x.note?x.note:'دفعة من أتعاب المحاماة'} عن القضية/الموضوع: ${c.name}${c.no?' رقم '+c.no+(c.year?' لسنة '+c.year:''):''}${c.court?' — '+c.court:''}.`,sz:26},{t:'p',x:''},{t:'p',x:'المستلم: ..............................        التوقيع: ..............................'},{t:'p',x:'اسم المسلِّم: ..............................        التوقيع: ..............................'},{t:'p',x:'نموذج إيصال صادر من تطبيق المكتبة القانونية — راجع بياناته قبل التوقيع.',sz:18}];
  return fxSend(docxBuild(B),'إيصال-'+String(n).padStart(3,'0')+'-'+(c.client||c.name).replace(/\s+/g,'-')+'.docx')}
 function feeStatement(cid){const c=CLS.find(y=>y.id==cid),L=accOf(cid),s=accSum(cid);if(!c)return;let due=0,paid=0;
@@ -46,7 +50,7 @@ document.addEventListener('click',async e=>{const el=e.target.closest('[data-act
  else if(a=='fcase')feeSheet(id);
  else if(a=='fopen'){const c=curCase();if(c)feeSheet(c.id)}
  else if(a=='fadd')feeAdd(el.dataset.kind);
- else if(a=='fsave'){const amt=accNum(v('#fa_amt'));if(!amt){toast('اكتب مبلغاً صحيحاً');return}ACC.push({id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),case:FEE.cid,k:el.dataset.kind,amt:Math.round(amt*100)/100,date:v('#fa_date')||isoD(new Date()),note:v('#fa_note').trim().slice(0,100)});accSave();render();toast('تم الحفظ');feeSheet(FEE.cid)}
+ else if(a=='fsave'){const amt=accNum(v('#fa_amt'));if(!amt){toast('اكتب مبلغاً صحيحاً');return}ACC.push({id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),case:FEE.cid,k:el.dataset.kind,rno:el.dataset.kind=='pay'?accNextRno(FEE.cid):undefined,amt:Math.round(amt*100)/100,date:v('#fa_date')||isoD(new Date()),note:v('#fa_note').trim().slice(0,100)});accSave();render();toast('تم الحفظ');feeSheet(FEE.cid)}
  else if(a=='fdel'&&confirm('حذف هذا القيد؟')){const i=ACC.findIndex(x=>x.id==id);if(i>=0){ACC.splice(i,1);accSave();render();feeSheet(FEE.cid)}}
  else if(a=='frec')await feeReceipt(id);
  else if(a=='fstmt')await feeStatement(FEE.cid);

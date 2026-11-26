@@ -1,14 +1,23 @@
 /* قفل اختياري برمز على هذا الجهاز: لوحة أرقام خاصة بالتطبيق (بدون أي خانة «كلمة مرور»)، فلا يتدخل مدير كلمات المرور في المتصفح
-   ولا تظهر تحذيرات «التحقق من كلمات المرور» التي تنتج عن خانات password. الرمز يُحفظ مشفّراً (SHA-256) على الجهاز فقط ولا يُرسل لأي جهة.
+   ولا تظهر تحذيرات «التحقق من كلمات المرور» التي تنتج عن خانات password. الرمز يُحفظ مشفّراً (PBKDF2-SHA256 بملح عشوائي — L4) على الجهاز فقط ولا يُرسل لأي جهة.
    هذا قفل للجهاز وليس حماية للموقع نفسه (الموقع المنشور على جيت هب عام لمن يعرف رابطه). */
 (function(){
 const K='pinh',KL='pinl',SALT='ll-v1:',ss=()=>{try{return sessionStorage}catch(e){return{getItem(){},setItem(){},removeItem(){}}}};
 const hash=async p=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(SALT+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of SALT+p)h=(h*33+c.charCodeAt(0))>>>0;return'x'+h}};
+/* L4: بصمة الرمز الجديدة p2$<تكرار>$<ملح عشوائي>$<بصمة> (PBKDF2-SHA256)؛ البصمة القديمة (SHA-256 بملح ثابت) تُقبل مرة ثم تُرقّى تلقائياً */
+const PIT=200000,b64=u=>btoa(String.fromCharCode.apply(null,u)),unb=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const pbk=async(p,salt,it)=>new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:it},await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']),256));
+const mk=async p=>{try{const s=crypto.getRandomValues(new Uint8Array(16));return'p2$'+PIT+'$'+b64(s)+'$'+b64(await pbk(p,s,PIT))}catch(e){return hash(p)}};
+const same=(a,b)=>{if(a.length!=b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0};
+const vf=async(p,st)=>{if(!st)return false;if(st.startsWith('p2$')){try{const[,it,s,h]=st.split('$');return same(b64(await pbk(p,unb(s),+it)),h)}catch(e){return false}}const ok=same(await hash(p),st);if(ok&&crypto&&crypto.subtle){try{put(await mk(p))}catch(e){}}return ok};
 const get=()=>{try{return localStorage.getItem(K)}catch(e){return null}},put=v=>{try{v?localStorage.setItem(K,v):(localStorage.removeItem(K),localStorage.removeItem(KL))}catch(e){}},plen=()=>{try{return +localStorage.getItem(KL)||0}catch(e){return 0}};
 /* رموز سهلة التخمين: أرقام مكررة أو متتابعة أو شائعة */
 const weak=p=>/^(\d)\1+$/.test(p)||'01234567890123456789'.includes(p)||'98765432109876543210'.includes(p)||['2580','1357','2468','1212','1122','1313','1004','2000','2024','2025','2026','0852','1379','1590'].includes(p);
-let fails=0,until=0,PAD=null;
-function wipe(){try{localStorage.clear()}catch(e){}try{indexedDB.deleteDatabase('legal-lib');indexedDB.deleteDatabase('legal-live')}catch(e){}}
+const TK='pinf',tf=()=>{try{return JSON.parse(localStorage.getItem(TK))||{n:0,u:0,l:0}}catch(e){return{n:0,u:0,l:0}}},ts=o=>{try{o&&(o.n||o.u||o.l)?localStorage.setItem(TK,JSON.stringify(o)):localStorage.removeItem(TK)}catch(e){}};
+/* تقييد المحاولات يُحفظ على الجهاز فلا يُمحى بإعادة تحميل الصفحة: كل 5 أخطاء انتظار يتضاعف من 30 ثانية حتى ساعة تقريباً */
+const gate=()=>{const t=tf();return Date.now()<t.u?{err:'محاولات كثيرة — انتظر '+Math.ceil((t.u-Date.now())/1000)+' ثانية'}:null},bad=()=>{const t=tf();t.n++;if(t.n>=5){t.u=Date.now()+30000*Math.pow(2,Math.min(t.l,7));t.l++;t.n=0}ts(t);return gate()||{err:'الرمز غير صحيح'}},good=()=>ts(null);
+let PAD=null;
+function wipe(){try{localStorage.clear()}catch(e){}try{indexedDB.deleteDatabase('legal-lib');indexedDB.deleteDatabase('legal-live');indexedDB.deleteDatabase('hscan-db')}catch(e){}}
 function padClose(){const o=document.querySelector('#lk');if(o)o.remove();document.removeEventListener('keydown',padKey,true);PAD=null}
 function padOpen(o){padClose();PAD={o,pin:'',busy:false};const d=document.createElement('div');d.id='lk';d.className='lk';
  d.innerHTML=`<div class="lkb"><div class="lkl">🔒</div><h2>${o.title}</h2><div class="lks">${o.sub||''}</div><div class="pdots" id="pdt"></div><div class="lks lkm" id="pms"></div><div class="pad" dir="ltr">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-pd="${n}">${n}</button>`).join('')}<button type="button" class="alt" data-pd="del" aria-label="مسح رقم">⌫</button><button type="button" data-pd="0">0</button><button type="button" class="alt ok" data-pd="ok" aria-label="تأكيد">✔</button></div>${o.extra||''}${o.cancel?'<button type="button" class="lnk" data-pd="cancel" style="margin-top:14px">إلغاء</button>':''}</div>`;
@@ -26,12 +35,12 @@ function padPress(k){if(!PAD||PAD.busy)return;
  padMsg('');padDots();if(k!='del'&&PAD.o.len&&PAD.pin.length==PAD.o.len)padSubmit()}
 function padKey(e){if(!PAD)return;if(/^\d$/.test(e.key)){e.preventDefault();padPress(e.key)}else if(e.key=='Backspace'){e.preventDefault();padPress('del')}else if(e.key=='Enter'){e.preventDefault();padPress('ok')}else if(e.key=='Escape'&&PAD.o.cancel){padPress('cancel')}}
 function show(){padOpen({title:'المكتبة القانونية',sub:'أدخل رمز الفتح',len:plen(),extra:'<button type="button" class="lnk" data-pd="forgot" style="margin-top:14px">نسيت الرمز؟</button>',
- onDone:async p=>{if(Date.now()<until)return{err:'محاولات كثيرة — انتظر '+Math.ceil((until-Date.now())/1000)+' ثانية'};if(await hash(p)==get()){ss().setItem('unl','1');fails=0;return{}}fails++;if(fails>=5){until=Date.now()+30000;fails=0}return{err:'الرمز غير صحيح'}}})}
+ onDone:async p=>{const g=gate();if(g)return g;if(await vf(p,get())){ss().setItem('unl','1');good();return{}}return bad()}})}
 function setPin(){return new Promise(res=>{let first='';padOpen({title:'اختر رمز القفل',sub:'من 4 إلى 12 رقماً',cancel:true,onCancel:()=>res(false),
  onDone:async p=>{if(weak(p))return{err:'الرمز سهل التخمين — اختر رمزاً أصعب'};first=p;
-  padOpen({title:'أعد كتابة الرمز',sub:'للتأكيد',cancel:true,onCancel:()=>res(false),onDone:async q=>{if(q!==first)return{err:'الرمزان غير متطابقين'};put(await hash(first));try{localStorage.setItem(KL,String(first.length))}catch(e){}ss().setItem('unl','1');return{after:()=>{toast('🔒 تم تفعيل القفل');res(true)}}}});return{keep:true}}})})}
-function checkCur(){return new Promise(res=>padOpen({title:'الرمز الحالي',sub:'أدخل رمز القفل الحالي',len:plen(),cancel:true,onCancel:()=>res(false),onDone:async c=>{if(await hash(c)==get())return{after:()=>res(true)};return{err:'الرمز غير صحيح'}}}))}
-function lockSheet(){const on=!!get();sheet(`<h2 class="sht">🔒 قفل التطبيق برمز</h2><div class="shm">${on?'القفل مفعّل: يُطلب الرمز كلما فتحت التطبيق من جديد.':'اجعل التطبيق يطلب رمزاً عند فتحه، لحماية قوائم قضاياك ومواعيدك وحساباتك من أي شخص يستعمل جهازك.'}</div><div class="acts one">${on?'<button class="btn pri" data-act="lknow">🔒 قفل الآن</button><button class="btn" data-act="lkchg">🔑 تغيير الرمز</button><button class="btn" data-act="lkoff">🔓 إلغاء القفل</button>':'<button class="btn pri" data-act="lkset">تفعيل القفل</button>'}</div><div class="shm" style="margin-top:12px">الرمز يُحفظ مشفّراً على جهازك فقط ولا يُرسل لأي جهة. هو قفل لهذا الجهاز وليس حماية للموقع نفسه: صيغ المكتبة متاحة لمن يملك رابط الموقع.</div>`)}
+  padOpen({title:'أعد كتابة الرمز',sub:'للتأكيد',cancel:true,onCancel:()=>res(false),onDone:async q=>{if(q!==first)return{err:'الرمزان غير متطابقين'};put(await mk(first));try{localStorage.setItem(KL,String(first.length))}catch(e){}ss().setItem('unl','1');return{after:()=>{toast('🔒 تم تفعيل القفل');res(true)}}}});return{keep:true}}})})}
+function checkCur(){return new Promise(res=>padOpen({title:'الرمز الحالي',sub:'أدخل رمز القفل الحالي',len:plen(),cancel:true,onCancel:()=>res(false),onDone:async c=>{const g=gate();if(g)return g;if(await vf(c,get())){good();return{after:()=>res(true)}}return bad()}}))}
+function lockSheet(){const vx=typeof vxLockHtml=='function'?vxLockHtml():'';if(window.VAULT&&VAULT.on){sheet(vx);return}const on=!!get();sheet(`<h2 class="sht">🔒 قفل التطبيق برمز</h2><div class="shm">${on?'القفل مفعّل: يُطلب الرمز كلما فتحت التطبيق من جديد.':'اجعل التطبيق يطلب رمزاً عند فتحه، لحماية قوائم قضاياك ومواعيدك وحساباتك من أي شخص يستعمل جهازك.'}</div><div class="acts one">${on?'<button class="btn pri" data-act="lknow">🔒 قفل الآن</button><button class="btn" data-act="lkchg">🔑 تغيير الرمز</button><button class="btn" data-act="lkoff">🔓 إلغاء القفل</button>':'<button class="btn pri" data-act="lkset">تفعيل القفل</button>'}</div><div class="shm" style="margin-top:12px">الرمز يُحفظ مشفّراً على جهازك فقط ولا يُرسل لأي جهة. هو قفل لهذا الجهاز وليس حماية للموقع نفسه: صيغ المكتبة متاحة لمن يملك رابط الموقع.</div>`+vx)}
 document.addEventListener('click',async e=>{const pd=e.target.closest('[data-pd]');if(pd){padPress(pd.dataset.pd);return}
  const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;
  if(a=='lock')lockSheet();
@@ -39,6 +48,6 @@ document.addEventListener('click',async e=>{const pd=e.target.closest('[data-pd]
  else if(a=='lkchg'){closeSheet();if(await checkCur()){if(await setPin())lockSheet()}else lockSheet()}
  else if(a=='lkoff'){closeSheet();if(await checkCur()){put(null);ss().removeItem('unl');toast('تم إلغاء القفل')}lockSheet()}
  else if(a=='lknow'){ss().removeItem('unl');closeSheet();show()}});
-window.llHasPin=()=>!!get();window.llCheckPin=checkCur;
-if(get()&&!ss().getItem('unl'))show();
+window.llHasPin=()=>!!get()||!!(window.VAULT&&VAULT.on);window.llCheckPin=()=>window.VAULT&&VAULT.on&&typeof vxAsk=='function'?vxAsk():checkCur();
+if(get()&&!ss().getItem('unl')&&!(window.VAULT&&VAULT.on))show();
 })();

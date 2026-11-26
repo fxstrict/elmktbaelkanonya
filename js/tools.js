@@ -10,11 +10,10 @@ function bumpOpen(id){CNT[id]=(CNT[id]||0)+1;_s('cnt',CNT)}
 const clGet=id=>id=='fav'?{id:'fav',name:'المفضلة',items:FAV}:CLS.find(x=>x.id==id);
 const rowX=d=>`<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${BK.has(d[0])?'⚠️ ':''}${d[1]}</div><div class="rm">${d.t} · ${d.b}</div></div><button class="st" data-act="lrm" data-id="${d[0]}" aria-label="إزالة من القائمة">✕</button></div>`;
 function casesView(){
- if(!S.cl){const all=[{id:'fav',name:'⭐ المفضلة',items:FAV},...CLS.map(c=>({...c,name:'📁 '+c.name}))];
-  return `<div class="bar2"><b>قضاياي</b><span><button class="pill" data-act="agenda">🗓 الأجندة</button> <button class="pill" data-act="lnew">➕ قضية جديدة</button></span></div>`+all.map(c=>`<div class="row" data-act="lopen" data-id="${c.id}"><div class="rt"><div class="rn">${esc2(c.name)}</div><div class="rm">${c.items.filter(i=>byId[i]).length} صيغة${c.id!='fav'?caseSub(c)+(c.status&&c.status!=CST[0]?' · '+esc2(c.status):''):''}</div></div><div class="ic">‹</div></div>`).join('')+(CLS.length?'':'<div class="em"><div>📂</div>أنشئ ملفاً لكل قضية (مثل «قضية فلان») تسجّل فيه بياناتها وجلساتها ومواعيدها وتضع فيه الصيغ التي تحتاجها بزر «➕ إضافة إلى قائمة قضية» داخل أي صيغة</div>')}
+ if(!S.cl){return `<div class="bar2 sec"><b>قضاياي</b><span class="bt2"><button class="pill" data-act="agenda">${svg('calendar','sm')} الأجندة</button> <button class="pill pri2" data-act="lnew">${svg('plus','sm')} قضية جديدة</button></span></div>`+casesList()+(CLS.length?'':`<div class="em"><div>${svg('folder','xl')}</div>أنشئ ملفاً لكل قضية (مثل «قضية فلان») تسجّل فيه بياناتها وجلساتها ومواعيدها وتضع فيه الصيغ التي تحتاجها بزر «إضافة إلى قائمة قضية» داخل أي صيغة</div>`)}
  const c=clGet(S.cl);if(!c){S.cl=null;return casesView()}
  const L=c.items.map(i=>byId[i]).filter(Boolean).filter(qm);
- return `<div class="bar2"><button class="lnk" data-act="lback">← قضاياي</button><b>${esc2(c.name)}</b><span>${c.items.filter(i=>byId[i]).length}</span></div>${c.id!='fav'?casePanel(c):''}<div class="acts">${c.id!='fav'?'<button class="btn" data-act="lren">✏️ تغيير الاسم</button><button class="btn" data-act="ldel">🗑 حذف القائمة</button>':''}<button class="btn" data-act="lshare">📤 مشاركة كنص</button><button class="btn" data-act="llink">🔗 رابط للاستيراد</button></div>`+(L.length?L.map(c.id=='fav'?row:rowX).join(''):`<div class="em"><div>📭</div>${S.q?'لا نتائج مطابقة':'القائمة فارغة — أضف صيغاً من داخل أي صيغة'}</div>`)}
+ return `<div class="bar2"><button class="lnk" data-act="lback">← قضاياي</button><b>${esc2(c.name)}</b><span>${c.items.filter(i=>byId[i]).length}</span></div>${c.id!='fav'?casePanel(c):''}<div class="acts">${c.id!='fav'?`<button class="btn" data-act="lren">${svg('pen')} تغيير الاسم</button><button class="btn" data-act="ldel">${svg('x')} حذف القائمة</button>`:''}<button class="btn" data-act="lshare">${svg('send')} مشاركة كنص</button><button class="btn" data-act="llink">${svg('link')} رابط للاستيراد</button></div>`+(L.length?L.map(c.id=='fav'?row:rowX).join(''):`<div class="em"><div>${svg('files','xl')}</div>${S.q?'لا نتائج مطابقة':'القائمة فارغة — أضف صيغاً من داخل أي صيغة'}</div>`)}
 function addSheet(id){const d=byId[id],opts=[{id:'fav',name:'⭐ المفضلة',items:FAV},...CLS.map(c=>({...c,name:'📁 '+c.name}))];
  sheet(`<div class="shh"><h2 class="sht">إضافة إلى قائمة</h2><button class="lnk" data-act="lnew" data-id="${id}">➕ جديدة</button></div><div class="shm">${esc2(d[1])}</div>`+opts.map(c=>`<button class="mrow ${c.items.includes(id)?'on':''}" data-act="ltog" data-id="${id}" data-k="${c.id}"><span>${esc2(c.name)}</span><span>${c.items.includes(id)?'✓':''}</span></button>`).join('')+'<button class="btn pri wide" data-act="close" style="margin-top:12px">تم</button>')}
 function shareList(c){const t='قائمة: '+c.name+'\n'+c.items.map(i=>byId[i]).filter(Boolean).map((d,n)=>(n+1)+') '+d[1]+'\n'+pv(d[0])).join('\n');
@@ -53,11 +52,12 @@ function relatedHtml(id){const d=byId[id];if(!d||NOREL.includes(d[2]))return'';
  const R=D.filter(x=>x!==d&&x.b==d.b&&!NOREL.includes(x[2])&&(d.p!='عام'?x.p==d.p:(x.s&&x.s==d.s))).sort((a,b)=>{const i=TORD.indexOf(a.t),j=TORD.indexOf(b.t);return(i<0?99:i)-(j<0?99:j)||(a[1]<b[1]?-1:1)}).slice(0,6);
  if(!R.length)return'';return '<div class="shm" style="margin:14px 0 6px">صيغ مرتبطة بنفس الموضوع</div>'+R.map(x=>`<div class="pr" data-act="open" data-id="${x[0]}" style="cursor:pointer"><span>${x[1]}</span><small>${x.t}</small></div>`).join('')}
 /* ---------- الرئيسية ---------- */
-function homeExtras(){let h=sessBanner()+(typeof poaBanner=='function'?poaBanner():'');const soon=DLS.map(x=>({...x,n:daysLeft(parseD(x.end))})).filter(x=>x.n>=0&&x.n<=14).sort((a,b)=>a.n-b.n);
+function homeBanners(){let h=sessBanner()+(typeof poaBanner=='function'?poaBanner():'');const soon=DLS.map(x=>({...x,n:daysLeft(parseD(x.end))})).filter(x=>x.n>=0&&x.n<=14).sort((a,b)=>a.n-b.n);
  if(soon.length)h+=`<div class="dlw" data-act="calc">⏰ <b>${esc2(soon[0].title)}</b> — ${soon[0].n==0?'ينتهي اليوم':'باقي '+soon[0].n+' يوم'}${soon.length>1?' (+'+(soon.length-1)+' مواعيد أخرى)':''}</div>`;
- h+=bkBanner();
- const top=Object.entries(CNT).filter(([i,n])=>n>=2&&byId[i]).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>byId[x[0]]);
- if(top.length)h+='<div class="bar2"><b>🔥 الأكثر فتحاً</b></div>'+top.map(row).join('');return h}
+ return h+bkBanner()}
+function homePopular(){const top=Object.entries(CNT).filter(([i,n])=>n>=2&&byId[i]).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>byId[x[0]]);
+ return top.length?'<div class="bar2 sec"><b>الأكثر فتحاً</b></div>'+top.map(row).join(''):''}
+function homeExtras(){return homeBanners()+homePopular()}
 /* ---------- الأحداث ---------- */
 document.addEventListener('click',async e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act,id=el.dataset.id,k=el.dataset.k;
  if(a=='lopen'){S.cl=id;render();scrollTo(0,0)}

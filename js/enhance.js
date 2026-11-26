@@ -76,6 +76,8 @@ const EN={core:{},cmp:null};
  C.pminutes=(d,w,h)=>{C.bgclean(d,w,h);C.adj(d,w,h,[0,8,20])};             /* محضر: يُبقي ألوان الأختام والتوقيعات */
  C.pjudg=(d,w,h)=>{C.denoise(d,w,h,[20]);C.adapt(d,w,h)};                  /* حكم/صورة مصوّرة ضوئياً: أبيض وأسود تكيّفي */
 })();
+/* N9a: إضافة عملية تحسين بعد حسابها مسبقاً في العامل (FX) إن وُجد؛ وإلا المسار المتزامن القديم كما هو */
+EN.fxOp=(it,op)=>EN._q=(EN._q||Promise.resolve()).then(async()=>{try{if(typeof FX!='undefined')await FX.warm(it,op)}catch(e){}dpOp(it,op)});
 EN.names={pdoc:'📄 مستند',pid:'🪪 بطاقة هوية',ppass:'🛂 جواز سفر',preceipt:'🧾 إيصال',pcontract:'📜 عقد',pminutes:'📝 محضر',pjudg:'⚖️ حكم'};
 EN.tools=[['magic','✨ ألوان سحرية'],['adapt','◐ أبيض وأسود تكيّفي'],['shadow','🌫 إزالة الظلال'],['bgclean','🧹 تنظيف الخلفية'],['denoise','🔇 تقليل التشويش'],['glare','💡 تقليل الوهج (تقريبي)'],['inkoff','✍️ إزالة الحبر الملوّن (تقريبي)']];
 EN.label={magic:'ألوان سحرية',adapt:'أبيض وأسود تكيّفي',shadow:'إزالة الظلال',bgclean:'تنظيف الخلفية',denoise:'تقليل التشويش',glare:'تقليل الوهج',inkoff:'إزالة الحبر الملوّن',adj:'سطوع/تباين/حدّة',erase:'ممحاة'};
@@ -117,9 +119,9 @@ EN.label={magic:'ألوان سحرية',adapt:'أبيض وأسود تكيّفي'
  document.addEventListener('input',e=>{if(e.target&&/^en[bcs]$/.test(e.target.id||''))enPrev()});
  document.addEventListener('click',async e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;
   /* الممحاة: «تطبيق» الأصلي يكتب عملية باسم erase لا يعرفها dpRender، فنعترضها ونكتبها كعملية filter */
-  if(a=='dpapply'&&DPE.mode=='erase'){e.stopImmediatePropagation();const it=DP.items[DPE.i],s=DPE.sel;if(it&&s&&s.w>8&&s.h>8){dpOp(it,{t:'filter',f:'erase:'+[s.x,s.y,s.w,s.h].map(Math.round).join(':')});DPE.sel=null;dpEditView()}return}
-  if(a=='enf'){const it=DP.items[DPE.i];if(!it)return;await busy('جارٍ التحسين…');dpOp(it,{t:'filter',f:el.dataset.f});dpEditView();return}
-  if(a=='enadj'){const it=DP.items[DPE.i],v=[+q('#enb').value,+q('#enc').value,+q('#ens').value];if(!it)return;if(!v[0]&&!v[1]&&!v[2]){toast('حرّك أحد المنزلقات أولاً');return}await busy();dpOp(it,{t:'filter',f:'adj:'+v.join(':')});dpEditView();return}
+  if(a=='dpapply'&&DPE.mode=='erase'){e.stopImmediatePropagation();const it=DP.items[DPE.i],s=DPE.sel;if(it&&s&&s.w>8&&s.h>8){await EN.fxOp(it,{t:'filter',f:'erase:'+[s.x,s.y,s.w,s.h].map(Math.round).join(':')});DPE.sel=null;dpEditView()}return}
+  if(a=='enf'){const it=DP.items[DPE.i];if(!it)return;await busy('جارٍ التحسين…');await EN.fxOp(it,{t:'filter',f:el.dataset.f});dpEditView();return}
+  if(a=='enadj'){const it=DP.items[DPE.i],v=[+q('#enb').value,+q('#enc').value,+q('#ens').value];if(!it)return;if(!v[0]&&!v[1]&&!v[2]){toast('حرّك أحد المنزلقات أولاً');return}await busy();await EN.fxOp(it,{t:'filter',f:'adj:'+v.join(':')});dpEditView();return}
   if(a=='enadjr'){['enb','enc','ens'].forEach(i=>{const s=q('#'+i);if(s)s.value=0});dpDraw();return}
-  if(a=='enall'){if(!DP.items.length)return;await busy('جارٍ تحسين '+DP.items.length+' صفحة…');DP.items.forEach(it=>dpOp(it,{t:'filter',f:el.dataset.f}));dpWork();toast('✔ طُبّق «'+(EN.names[el.dataset.f]||'')+'» على كل الصفحات',2500)}},true);
+  if(a=='enall'){if(!DP.items.length)return;await busy('جارٍ تحسين '+DP.items.length+' صفحة…');let k=0;for(const it of DP.items){toast('⏳ صفحة '+(++k)+' من '+DP.items.length,1500);await EN.fxOp(it,{t:'filter',f:el.dataset.f})}dpWork();toast('✔ طُبّق «'+(EN.names[el.dataset.f]||'')+'» على كل الصفحات',2500)}},true);
 })();

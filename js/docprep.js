@@ -57,14 +57,20 @@ function dpPdf(pages,mode){const E=new TextEncoder(),ch=[];let off=0;const offs=
  const out=new Uint8Array(off);let p=0;ch.forEach(u=>{out.set(u,p);p+=u.length});return out}
 /* ---------- التنفيذ ---------- */
 const dpBase=()=>(DP.name||'').trim()||'مستندات-'+isoD(new Date());
+/* N10: تقدّم حقيقي (شريط + نسبة + وقت متبقٍّ تقريبي) وإلغاء تعاوني بين الخطوات.
+   الإلغاء يُفحص بعد كل صفحة (معالجة أو ترميز) فيتوقف خلال أجزاء من الثانية على الحاسوب وأقل من ثانيتين غالباً على هاتف عادي (أطول صفحة قد تحتاج وقتاً)، ثم تعود شاشة الصفحات بلا أي أثر: لا ملف يُنزَّل ولا شيء يتغير في المشروع. */
 async function dpRun(){if(!DP.items.length){toast('أضف صوراً أولاً');return}const N=DP.items.length,target=Math.round((parseFloat(DP.kb)||0)*1024);
- sheet('<h2 class="sht">⏳ جارٍ التنفيذ…</h2><div class="shm" id="dpp">0 / '+N+'</div>');const files=[];
- try{const cvs=[];for(let i=0;i<N;i++){const e=dpq('#dpp');if(e)e.textContent=(i+1)+' / '+N;await new Promise(r=>setTimeout(r,15));cvs.push(dpFinal(DP.items[i],i,N))}
-  if(DP.out=='pdf'){let f=1,pdf=null;for(let a=0;a<5;a++){const per=target?Math.max(15000,(target-2500)*f/N):0,pages=[];for(const c of cvs){const b=await dpEncode(c,'jpeg',per);pages.push({jpg:new Uint8Array(await b.arrayBuffer()),w:c.width,h:c.height})}pdf=dpPdf(pages,DP.page);if(!target||pdf.length<=target)break;f*=0.82}
+ if(DP.running){return}DP.running=true;DP.cancel=false;const CANC={},T0=Date.now(),TOT=2*N;let step=0;
+ sheet('<h2 class="sht">⏳ جارٍ التنفيذ…</h2><div class="shm" id="dpp">0 / '+N+'</div><div class="dpbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="dppb"></i></div><div class="shm" id="dpe">&nbsp;</div><div class="acts one"><button class="btn" data-act="dpcancel" id="dpcb">✖ إلغاء التنفيذ</button></div>');const files=[];
+ const tick=async(lab)=>{const pc=Math.min(100,Math.round(step/TOT*100)),e=dpq('#dpp'),b=dpq('#dppb'),r=dpq('#dpe'),bar=dpq('.dpbar');if(e)e.textContent=lab+' · '+pc+'%';if(b)b.style.width=pc+'%';if(bar)bar.setAttribute('aria-valuenow',pc);
+  if(r){const el=(Date.now()-T0)/1000;r.innerHTML=step>=2&&pc<100?'متبقٍّ نحو '+Math.max(1,Math.round(el/step*(TOT-step)))+' ث':'&nbsp;'}
+  await new Promise(r=>setTimeout(r,15));if(DP.cancel)throw CANC};
+ try{const cvs=[];for(let i=0;i<N;i++){await tick('معالجة صفحة '+(i+1)+' / '+N);cvs.push(dpFinal(DP.items[i],i,N));step++}
+  if(DP.out=='pdf'){let f=1,pdf=null;for(let a=0;a<5;a++){const per=target?Math.max(15000,(target-2500)*f/N):0,pages=[];if(a>0)step=N;for(let i=0;i<cvs.length;i++){await tick('ترميز صفحة '+(i+1)+' / '+N+(a?' (محاولة '+(a+1)+' لبلوغ الحجم)':''));const c=cvs[i],b=await dpEncode(c,'jpeg',per);pages.push({jpg:new Uint8Array(await b.arrayBuffer()),w:c.width,h:c.height});step=Math.min(TOT-1,N+i+1)}pdf=dpPdf(pages,DP.page);if(!target||pdf.length<=target)break;f*=0.82}
    files.push({name:dpBase()+'.pdf',type:'application/pdf',blob:new Blob([pdf],{type:'application/pdf'}),pages:N})}
-  else{const ext={jpeg:'jpg',png:'png',webp:'webp'}[DP.fmt];for(let i=0;i<N;i++){const b=await dpEncode(cvs[i],DP.fmt,target);files.push({name:DP.items[i].name+(DP.out=='img'&&(target||DP.fmt!='jpeg')?'':'')+'.'+ext,type:DPT[DP.fmt],blob:b,from:DP.items[i].size})}}
- }catch(e){toast('تعذّر التنفيذ — جرّب صوراً أصغر');dpWork();return}
- DP.res={files,target};dpResult()}
+  else{const ext={jpeg:'jpg',png:'png',webp:'webp'}[DP.fmt];for(let i=0;i<N;i++){await tick('ترميز صفحة '+(i+1)+' / '+N);const b=await dpEncode(cvs[i],DP.fmt,target);files.push({name:DP.items[i].name+'.'+ext,type:DPT[DP.fmt],blob:b,from:DP.items[i].size});step=N+i+1}}
+ }catch(e){DP.running=false;if(e===CANC){DP.cancel=false;toast('✖ أُلغي التنفيذ — لم يُنزَّل شيء ولم يتغير مشروعك',3500);dpWork();return}toast('تعذّر التنفيذ — جرّب صوراً أصغر');dpWork();return}
+ DP.running=false;DP.res={files,target};dpResult()}
 function dpResult(){const R=DP.res,tot=R.files.reduce((s,f)=>s+f.blob.size,0),from=DP.items.reduce((s,i)=>s+i.size,0),over=R.target&&R.files.some(f=>f.blob.size>R.target&&R.files.length==1);
  const cs=navigator.canShare&&R.files.length&&(()=>{try{return navigator.canShare({files:R.files.map(f=>new File([f.blob],f.name,{type:f.type}))})}catch(e){return false}})();
  sheet(`<div class="shh"><h2 class="sht">✔ الملفات جاهزة</h2><button class="lnk" data-act="dpwork">← تعديل</button></div><div class="shm">الحجم الإجمالي ${dpKB(tot)}${from?' (الأصل '+dpKB(from)+')':''}${R.target?' — المستهدف '+dpKB(R.target)+(over?' — لم يمكن بلوغه دون تدهور شديد للجودة':''):''}</div>`+R.files.map((f,i)=>`<div class="pr"><span><b>${esc2(f.name)}</b><br><small>${dpKB(f.blob.size)}${f.pages?' · '+f.pages+' صفحة':''}${f.from?' · كان '+dpKB(f.from):''}</small></span><button class="pb" data-act="dpsave" data-i="${i}" aria-label="تنزيل">⬇</button></div>`).join('')+`<div class="acts" style="margin-top:10px">${R.files.length>1?'<button class="btn" data-act="dpzip">🗜 تنزيل الكل (ZIP)</button>':''}${cs?'<button class="btn" data-act="dpshare">📤 مشاركة</button>':''}</div><div class="shm" style="margin-top:8px">راجع الملف بنفسك قبل رفعه على المنصة، خصوصاً وضوح النص بعد التصغير.</div>`)}
@@ -104,6 +110,7 @@ document.addEventListener('click',async e=>{const el=e.target.closest('[data-act
  else if(a=='dpapply'){const it=DP.items[DPE.i],s=DPE.sel;if(it&&s&&s.w>8&&s.h>8){const o={t:DPE.mode,x:Math.round(s.x),y:Math.round(s.y),w:Math.round(s.w),h:Math.round(s.h)};dpOp(it,o);DPE.sel=null;if(o.t=='crop')DPE.mode='';dpEditView()}}
  else if(a=='dpkb'){DP.kb=el.dataset.v;dpWork()}
  else if(a=='dprun')dpRun();
+ else if(a=='dpcancel'){DP.cancel=true;const b=dpq('#dpcb');if(b){b.disabled=true;b.textContent='جارٍ الإلغاء…'}}
  else if(a=='dpsave'){const f=DP.res&&DP.res.files[i];if(f)dpSave(f)}
  else if(a=='dpzip')dpZip();
  else if(a=='dpshare'){const fs=DP.res.files.map(f=>new File([f.blob],f.name,{type:f.type}));try{await navigator.share({files:fs,title:dpBase()})}catch(x){}}});
