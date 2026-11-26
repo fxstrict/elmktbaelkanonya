@@ -1,0 +1,10 @@
+مكتبات الطرف الثالث المضمّنة محلياً (لا CDN) — الحسام سكان N5
+1) pdf-lib 1.17.1 — رخصة MIT — Copyright (c) 2019 Andrew Dillon — https://github.com/Hopding/pdf-lib
+   الملف: pdf-lib.min.js
+2) PDF.js (pdfjs-dist) 3.11.174 — رخصة Apache-2.0 — Copyright 2023 Mozilla Foundation — https://github.com/mozilla/pdf.js
+   الملفان: pdf.min.js و pdf.worker.min.js
+الرخصتان تسمحان بالتضمين وإعادة التوزيع مع الإبقاء على إشعارات الحقوق (موجودة في رؤوس الملفات).
+3) Tesseract.js 7.0.0 — Apache-2.0 — https://github.com/naptha/tesseract.js  (lib/ocr/tesseract.min.js و lib/ocr/worker.min.js)
+4) tesseract.js-core 7.0.0 (محرك Tesseract OCR مترجَم إلى WebAssembly) — Apache-2.0  (lib/ocr/core/*.wasm.js) — نص الرخصة: lib/ocr/LICENSE-tesseract-core.txt
+5) بيانات اللغة tessdata_best_int للعربية والإنجليزية (@tesseract.js-data/ara و eng 1.0.0) — Apache-2.0 — (lib/ocr/lang/*.traineddata.gz)
+6) jsQR 1.4.0 — Apache-2.0 — https://github.com/cozmo/jsQR  (lib/jsQR.js)
