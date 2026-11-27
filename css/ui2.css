@@ -103,3 +103,28 @@ h1{font-weight:800;letter-spacing:0}
 .bdg.gold{background:color-mix(in srgb,var(--ac2) 20%,transparent);color:var(--ac2t)}.bdg.mu{background:var(--bd);color:var(--mu)}.bdg.end{background:color-mix(in srgb,var(--mu) 18%,transparent);color:var(--mu)}
 .bdg.sess{background:color-mix(in srgb,var(--ac) 12%,transparent)}.bdg.sess.hot{background:var(--ac2);color:#1a1405}
 .dlw{display:flow-root}
+/* جلد الأيقونات */
+.eic{display:inline-flex;vertical-align:-3px;margin-inline-end:6px}.eic .ico{width:1.15em;height:1.15em;min-width:15px;min-height:15px}.btn .eic,.pill .eic,.lnk .eic{margin-inline-end:0}
+.ci .eic,.ic .eic{margin:0}.ci .eic .ico,.ic .eic .ico{width:22px;height:22px}
+/* ---- شارة المرحلة ---- */
+.rbd{margin-top:5px}.stg{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;background:var(--tint);color:var(--ac)}
+.stg.s1{background:color-mix(in srgb,var(--ac) 13%,transparent)}.stg.s2{background:color-mix(in srgb,var(--ac2) 20%,transparent);color:var(--ac2t)}.stg.s3{background:color-mix(in srgb,#3b6ea8 15%,transparent);color:#2c5a8f}.stg.s4{background:color-mix(in srgb,#8a4a2c 15%,transparent);color:#8a4a2c}.stg.s5{background:var(--bd);color:var(--mu)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .stg.s3{color:#8db6e6}:root:not([data-theme=light]) .stg.s4{color:#e0a27f}}
+:root[data-theme=dark] .stg.s3{color:#8db6e6}:root[data-theme=dark] .stg.s4{color:#e0a27f}
+/* ---- شريط تنقّل ملف القضية ---- */
+.cpnav{position:sticky;z-index:5;display:flex;gap:2px;padding:3px;margin:0 0 10px;background:var(--tint);border-radius:14px;box-shadow:0 0 0 6px var(--sf)}
+.cpn{flex:1 1 0;min-width:0;min-height:38px;padding:0 4px;border-radius:11px;font-size:12.5px;font-weight:700;color:var(--mu);transition:background .15s,color .15s}
+.cpn.on{background:var(--sf);color:var(--ac);box-shadow:var(--sh1)}.cpn:active{transform:scale(.97)}
+.cp[data-ctab=info]>[data-ct]:not([data-ct=info]),.cp[data-ctab=docs]>[data-ct]:not([data-ct=docs]),.cp[data-ctab=fin]>[data-ct]:not([data-ct=fin]),.cp[data-ctab=memo]>[data-ct]:not([data-ct=memo]){display:none}
+.cph{scroll-margin-top:130px}
+/* ---- الأرقام العربية/الهندية (خيار): خط فرعي لأرقام 0-9 فقط، مشتق من DejaVu Sans (ترخيص Bitstream Vera/DejaVu الحر) وأُعيدت تسميته. لا يغيّر أي نص ولا قيمة ---- */
+@font-face{font-family:'LL Digits';src:url(../fonts/ll-digits-400.woff) format('woff');font-weight:100 599;unicode-range:U+0030-0039;font-display:swap}
+@font-face{font-family:'LL Digits';src:url(../fonts/ll-digits-700.woff) format('woff');font-weight:600 900;unicode-range:U+0030-0039;font-display:swap}
+html[data-nums=ar] body,html[data-nums=ar] button,html[data-nums=ar] input,html[data-nums=ar] textarea,html[data-nums=ar] select{font-family:'LL Digits',Tajawal,system-ui,sans-serif}
+.seg button{font-size:12.5px;padding:0 4px}
+/* ---- شاشات ضيقة (≤360px): لا تمرير أفقي ---- */
+.search{min-width:0}.search input{min-width:0;width:100%}.fbtn{flex:none}.brand{min-width:0}.brand h1{white-space:nowrap}
+@media(max-width:360px){.brand small{font-size:11px}.hb{gap:6px}.ib{width:40px;height:40px}.hero h2{font-size:20px}.qt2 b{font-size:11px}}
+
+.cpn{position:relative}.cpc{font-style:normal;display:inline-block;min-width:16px;height:16px;line-height:16px;padding:0 4px;margin-inline-start:4px;border-radius:8px;background:var(--ac2t,#8a6d1f);color:#fff;font-size:10px;font-weight:700;text-align:center;vertical-align:middle}.cpn.on .cpc{background:var(--ac2t,#8a6d1f)}
+.cpn{white-space:nowrap}.cpn .cpc{min-width:14px;height:14px;line-height:14px;margin-inline-start:3px;font-size:9px;padding:0 3px}@media(max-width:360px){.cpn{padding-inline:4px;font-size:12px}}
