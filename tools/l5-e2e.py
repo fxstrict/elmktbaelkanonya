@@ -114,7 +114,7 @@ async def main():
         await p.select_option('#dl_t', 'nodec'); await p.wait_for_timeout(200)
         T('D3 «مغلقة بلا قرار مسجّل»: جلسة قضية 3 القديمة', await p.locator('#dl_r [data-act="cgo"]').count() >= 1 and 'قضية 3' in await p.inner_text('#dl_r'), await p.inner_text('#dl_r'))
         # ---- E) سجل الوقت
-        await goto('c1'); await p.click('#m [data-act="tlopen"]'); await p.wait_for_timeout(300)
+        await goto('c1'); await p.evaluate("t=>{const b=document.querySelector('.cpn[data-t='+t+']');if(b)b.click()}", 'fin'); await p.click('#m [data-act="tlopen"]'); await p.wait_for_timeout(300)
         T('E1 شاشة سجل الوقت تفتح من ملف القضية', await p.locator('#tl_h').count() == 1)
         await p.fill('#tl_h', '2'); await p.fill('#tl_m', '30'); await p.fill('#tl_d', T0); await p.fill('#tl_n', 'مراجعة الملف'); await p.click('[data-act="tladd"]'); await p.wait_for_timeout(300)
         c1 = await C('c1'); tl = c1.get('tl', [])
@@ -171,7 +171,7 @@ async def main():
         T('F3 لا تعارض ظاهر + تنبيه أن الفحص مطابقة أسماء فقط', 'لا تعارض ظاهر' in rs and 'مطابقة الأسماء' in rs, rs[:240])
         await p.fill('#cf_c', 'موكل أ'); await p.fill('#cf_o', 'x'); await p.click('[data-act="cfrun"]'); await p.wait_for_timeout(250); rs = await p.inner_text('#cf_r')
         T('F4 الموكل نفسه في قضية أخرى يظهر معلومة لا تعارضاً مباشراً (قضية 1: موكل سابق/حالي)', 'قضية 1' in rs, rs[:240])
-        await goto('c1'); await p.click('#m [data-act="cfopen"][data-cc="c1"]'); await p.wait_for_timeout(350)
+        await goto('c1'); await p.evaluate("t=>{const b=document.querySelector('.cpn[data-t='+t+']');if(b)b.click()}", 'fin'); await p.click('#m [data-act="cfopen"][data-cc="c1"]'); await p.wait_for_timeout(350)
         T('F5 فحص من القضية: الحقول معبأة (موكل أ، خصم س) والنتيجة تذكر قضية 2 دون القضية نفسها', await p.input_value('#cf_c') == 'موكل أ' and await p.input_value('#cf_o') == 'خصم س' and 'قضية 2' in await p.inner_text('#cf_r') and 'قضية 1' not in (await p.inner_text('#cf_r')).replace('قضية 2', ''), (await p.inner_text('#cf_r'))[:200])
         # تحذير عند حفظ بيانات القضية
         await goto('c4'); DLG['log'].clear(); DLG['mode'] = 'dismiss'
