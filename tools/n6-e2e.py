@@ -47,17 +47,17 @@ async def main():
         T('مع كلمة مرور: يُفتح بها وبياناته الوصفية سليمة', re_.is_encrypted and re_.decrypt('Ab12') > 0 and re_.metadata.title == 'محمد ضد علي 123-2026 – توكيل' and 'محمد أحمد' in re_.metadata.subject, dict(re_.metadata or {}))
         await js("DP.pw='';closeSheet()")
         # بلا قضية: العنوان فقط
-        await js("DP.res=null;HD.caseId='';HD.caseName='';HD.client='';HD.dtype='';DP.name='مسح عام';dpWork()"); await click('dprun'); await p.wait_for_selector('[data-act=dpsave]', timeout=30000)
+        await js("HD.auto=false;DP.res=null;HD.caseId='';HD.caseName='';HD.client='';HD.dtype='';DP.name='مسح عام';dpWork()"); await click('dprun'); await p.wait_for_selector('[data-act=dpsave]', timeout=30000)
         f = (await js(GETF))[0]; open(f'{OUT}/n.pdf', 'wb').write(base64.b64decode(f['b64'])); mm = PdfReader(f'{OUT}/n.pdf').metadata
         T('بلا قضية: عنوان فقط بلا موضوع', mm.title == 'مسح عام' and not mm.subject, dict(mm or {}))
         # ---- مرشح الموكل في المكتبة ----
-        await js("closeSheet();DP.items=[];HD.cur=null;HD.last=''")
-        await js("(async()=>{HD.client='سعيد حسن';HD.caseId='c2';HD.caseName='سعيد ضد وزارة 7-2026';await HD.addPdf('عقد',new Uint8Array([37,80,68,70]),'');})()"); await p.wait_for_timeout(500)
-        await js("HD.clientF='';HD.lib()"); await p.wait_for_selector('[data-act=hdclient]')
+        await js("closeSheet();DP.items=[];HD.cur=null;HD.last='';HD.auto=true")
+        await js("(async()=>{HD.client='سعيد حسن';HD.caseId='c2';HD.caseName='سعيد ضد وزارة 7-2026';await HD.addPdf('عقد',new Uint8Array([37,80,68,70]),'');})()"); await p.wait_for_timeout(1500)
+        await js("(async()=>{HD.clientF='';await HD.lib()})()"); await p.wait_for_selector('[data-act=hdclient]')
         T('أزرار الموكلين في المكتبة (2)', await p.locator('[data-act=hdclient]').count() == 2)
         await click('hdclient', v='سعيد حسن'); await p.wait_for_timeout(400)
         T('المرشح بالموكل يعرض مستنداته فقط', await p.locator('#hdl .dpt').count() == 1)
-        await js("HD.clientF='';HD.q='محمد أحمد';HD.lib()"); await p.wait_for_timeout(500)
+        await js("(async()=>{HD.clientF='';HD.q='محمد أحمد';await HD.lib()})()"); await p.wait_for_timeout(300)
         T('البحث باسم الموكل', await p.locator('#hdl .dpt').count() == 1); await js("HD.q=''")
         # ربط من نافذة التفاصيل يملأ الموكل
         await js("CLS.push({id:'c3',name:'قضية اختبار',no:'9',year:'2026',client:'خالد',sessions:[]});HD.lib()"); await p.wait_for_selector('[data-act=hdinfo]')

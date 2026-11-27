@@ -69,7 +69,7 @@ async def main():
         await p.evaluate("""()=>{const c=dpRender(DP.items[0]);window.__png=c.toDataURL('image/png')}"""); png = await p.evaluate("window.__png"); open(f'{SHOTS}/page_annotated.png', 'wb').write(base64.b64decode(png.split(',')[1]))
         # تراجع المحرر يزيل كل التعليقات دفعة واحدة
         await p.click('[data-act=dpundo]'); await p.wait_for_timeout(300); T('تراجع المحرر يعيد الصفحة الأصلية', await p.evaluate("("+HASH+")(DP.items[0])") == h0)
-        await p.click('[data-act=stann][data-i="0"]') if await p.locator('[data-act=stann][data-i="0"]').count() else await p.evaluate("stOpenView&&0")
+        await p.click('[data-act=edtab][data-t=ann]'); await p.click('[data-act=stann][data-i="0"]') if await p.locator('[data-act=stann][data-i="0"]').count() else await p.evaluate("stOpenView&&0")
         # إلغاء لا يُغيّر شيئاً
         await p.wait_for_selector('#stc'); await p.click('[data-act=sttool][data-v=text]'); await p.fill('[data-st=txt]', 'مؤقت'); await tap(.5, .5); await p.click('[data-act=stcancel]'); await p.wait_for_selector('#dpe')
         T('إلغاء الاستوديو لا يضيف عمليات', await p.evaluate("DP.items[0].ops.length") == 0)

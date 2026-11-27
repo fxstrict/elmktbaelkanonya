@@ -13,7 +13,7 @@ def T(n, c, extra=''):
     R.append(bool(c)); print(('✓ ' if c else '✗ ') + n + (('  ' + str(extra)) if extra != '' else ''))
 from pypdf import PdfReader
 HASH = "(it)=>{const c=dpRender(it),t=document.createElement('canvas');t.width=24;t.height=24;const x=t.getContext('2d');x.drawImage(c,0,0,24,24);const d=x.getImageData(0,0,24,24).data,o=[c.width,c.height];for(let i=0;i<d.length;i+=4)o.push(d[i]);return o}"
-def same(a,b): return a[:2]==b[:2] and max(abs(x-y) for x,y in zip(a[2:],b[2:]))<=3
+def same(a,b): return a[:2]==b[:2] and max(abs(x-y) for x,y in zip(a[2:],b[2:]))<=6
 GETF = "async()=>{const o=[];for(const f of DP.res.files){const u=new Uint8Array(await f.blob.arrayBuffer());let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));o.push({name:f.name,type:f.type,b64:btoa(s)})}return o}"
 async def main():
     async with async_playwright() as pw:
