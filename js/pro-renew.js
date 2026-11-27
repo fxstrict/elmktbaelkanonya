@@ -5,15 +5,16 @@ const rnwDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMont
 /* هل تلزم لافتة/تنبيه؟ — {kind:'soon'|'expired'|'revoked',days,s} أو null. لا تنبيه للتجربة ولا لمن لم يشترك قط */
 function proRenewInfo(s){
  if(typeof PRO=='undefined'||!PRO.enabled)return null;s=s||proStatus();
- if(s.state=='pro'){const lim=s.plan=='event'?PRO_WARN_EVENT:(PRO.warnDays||PRO_WARN_DAYS);return s.daysLeft<=lim?{kind:'soon',days:s.daysLeft,s}:null}
+ if(s.state=='pro'){const lim=s.plan=='event'?PRO_WARN_EVENT:(PRO.warnDays||PRO_WARN_DAYS);return s.daysLeft<=lim?{kind:'soon',days:s.daysLeft,s}:s.clockBack?{kind:'clock',days:s.daysLeft,s}:s.stale?{kind:'stale',days:s.daysLeft,s}:null}
  if(s.state=='expired'&&s.plan)return{kind:s.revoked?'revoked':'expired',days:0,s};
  return null}
 const rnwLeft=d=>d<=0?'ينتهي اشتراكك اليوم':d==1?'ينتهي اشتراكك غداً':'ينتهي اشتراكك خلال '+d+' يوماً';
-function proRenewBtn(s){const i=proRenewInfo(s);return i&&i.kind!='revoked'?'<div class="acts one"><button class="btn pri" data-act="prorenew">🔄 تجديد الاشتراك</button></div>':(i?'<div class="acts one"><button class="btn" data-act="prorenew">💬 تواصل معنا</button></div>':'')}
+function proRenewBtn(s){const i=proRenewInfo(s);return i&&(i.kind=='clock'||i.kind=='stale')?'':i&&i.kind!='revoked'?'<div class="acts one"><button class="btn pri" data-act="prorenew">🔄 تجديد الاشتراك</button></div>':(i?'<div class="acts one"><button class="btn" data-act="prorenew">💬 تواصل معنا</button></div>':'')}
 function proRenewPrice(){return PRO.renewPrice>0?PRO.renewPrice:(typeof proPrice=='function'?proPrice():PRO.price)}
 /* لافتة الرئيسية — تُخفى لبقية اليوم بزر ✕ */
 function rnwHtml(){
  const i=proRenewInfo();if(!i||_l('rnwd','')===rnwDay())return '';
+ if(i.kind=='clock'||i.kind=='stale'){const t=i.kind=='clock'?'🕒 ساعة جهازك أقدم من آخر استخدام':'📡 اتصل بالإنترنت لتحديث التحقق من اشتراكك',d=i.kind=='clock'?'صحّح تاريخ الجهاز؛ الاشتراك يُحسب من آخر تاريخ شوهد.':'لم يُتحقَّق من حالة الاشتراك منذ مدة طويلة. اشتراكك يعمل كما هو.';return `<div class="evn rnw"><button class="rx" data-act="rnwx" aria-label="إخفاء">✕</button><b>${t}</b><small>${d}</small></div>`}
  const t=i.kind=='soon'?'⏰ '+rnwLeft(i.days):i.kind=='revoked'?'⛔ تم إبطال كود الاشتراك':'⌛ انتهى اشتراك Pro',
   b=i.kind=='revoked'?'تواصل معنا':'🔄 جدّد الآن';
  return `<div class="evn rnw"><button class="rx" data-act="rnwx" aria-label="إخفاء">✕</button><b>${t}</b><small>مزاياك المجانية وبياناتك كما هي${i.kind=='soon'?' — جدّد قبل الانتهاء لتستمر مزايا Pro':''}</small><div class="acts one"><button class="btn pri" data-act="prorenew">${b}</button></div></div>`}

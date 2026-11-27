@@ -18,15 +18,15 @@ const qm=d=>{const p=PQ();return !p||score(d,p)>0};
 const nf=()=>Object.values(S.f).filter(Boolean).length;
 const gd=id=>!!byId[id]&&byId[id][1].includes('مستند جوجل'),isEnc=id=>!!PARTS[id];
 const pv=id=>isEnc(id)?'https://drive.google.com/drive/folders/'+id:gd(id)?'https://docs.google.com/document/d/'+id+'/preview':'https://drive.google.com/file/d/'+id+'/preview',dl=id=>isEnc(id)?'https://drive.google.com/drive/folders/'+id:gd(id)?'https://docs.google.com/document/d/'+id+'/export?format=docx':'https://drive.usercontent.google.com/download?id='+id+'&export=download&confirm=t';
-function list(){const b=S.tab=='fav'?FAV.map(i=>byId[i]).filter(Boolean):S.tab=='rec'?REC.map(i=>byId[i]).filter(Boolean):D,p=PQ(),fl=d=>S.tab=='all'||S.tab=='home'?match(d):true;
+function list(){const b=S.tab=='fav'||S.tab=='favs'?FAV.map(i=>byId[i]).filter(Boolean):S.tab=='rec'?REC.map(i=>byId[i]).filter(Boolean):D,p=PQ(),fl=d=>S.tab=='all'||S.tab=='home'?match(d):true;
  let L=b.filter(d=>fl(d)&&qm(d));
  if(p&&(S.tab=='all'||S.tab=='home'))L=L.map(d=>[d,score(d,p)]).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);
  if(!L.length&&p&&p.ws.length>1){L=b.filter(fl).map(d=>[d,score(d,p,true)]).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);L.near=L.length>0}
  return L}
-const row=d=>{const f=FAV.includes(d[0]);return `<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${BK.has(d[0])?'⚠️ ':''}${d[1]}</div><div class="rm">${d.t} · ${d.b}${d.p!='عام'?' · '+d.p:''}${ALT[d[0]]?' · '+(ALT[d[0]].length+1)+' نسخ':''}</div></div><button class="st ${f?'on':''}" data-act="fav" data-id="${d[0]}" aria-label="مفضلة">${svg('star',f?'fill':'')}</button></div>`};
-function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن محكمة أو نيابة…':S.tab=='lib'&&typeof lvPh=='function'?lvPh():'ابحث في '+D.length+' صيغة…'}
+const row=d=>{const f=FAV.includes(d[0]);return `<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${BK.has(d[0])?'⚠️ ':''}${d[1]}</div><div class="rm">${d.t} · ${d.b}${d.p!='عام'?' · '+d.p:''}${ALT[d[0]]?' · '+(ALT[d[0]].length+1)+' نسخ':''}</div>${typeof stageChip=='function'?stageChip(d):''}</div><button class="st ${f?'on':''}" data-act="fav" data-id="${d[0]}" aria-label="مفضلة">${svg('star',f?'fill':'')}</button></div>`};
+function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن محكمة أو نيابة…':S.tab=='favs'?'ابحث في المفضلة…':S.tab=='lib'&&typeof lvPh=='function'?lvPh():'ابحث في '+D.length+' صيغة…'}
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab||(b.dataset.alt||'').split(' ').includes(S.tab)));
- {const sg=$('#seg');if(sg){sg.hidden=!(S.tab=='all'||S.tab=='lib');sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab))}}
+ {const sg=$('#seg');if(sg){sg.hidden=!(S.tab=='all'||S.tab=='lib'||S.tab=='favs');sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab))}}
  $('#fe').textContent=CLS.length||'';$('#fn').textContent=nf()||'';$('#fn').hidden=!nf();$('#clr').hidden=!S.q;
  const all=S.tab=='all',gn=FA.find(x=>x[0]==S.g)[1];
  $('#qt').hidden=!all;$('#qt').innerHTML=['',...uniq('t')].map(x=>`<button class="chip ${S.f.t==x?'on':''}" data-act="ftype" data-v="${x}">${x||'الكل'}</button>`).join('');
@@ -39,7 +39,7 @@ function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن
  else if(S.tab=='home'){const c={};D.forEach(d=>c[d[S.g]]=(c[d[S.g]]||0)+1);
   m.innerHTML=(typeof homeBanners=='function'?homeBanners():'')+(typeof homeHero=='function'?homeHero():'')+`<div class="bar2 sec"><b>تصفّح الصيغ</b><button class="pill" data-act="gmenu">${gn} ▾</button></div><div class="grid">`+Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`<button class="cat" data-act="cat" data-v="${v}"><span class="ci">${icon(S.g,v)}</span><b>${v}</b><span>${n} صيغة</span></button>`).join('')+'</div>'+(typeof homeContinue=='function'?homeContinue():'')+(typeof homePopular=='function'?homePopular():'')}
  else{const L=list();let h=(S.tab=='all'?artCard(S.q):'')+(L.near?'<div class="wn">لا توجد صيغة تطابق كل الكلمات — هذه نتائج تطابق بعضها</div>':'')+`<div class="bar2"><b>${L.length} صيغة</b>${S.tab=='rec'&&L.length?'<button class="lnk" data-act="recclr">مسح السجل</button>':''}</div>`;
-  if(!L.length)h+=`<div class="em"><div>${svg(S.tab=='fav'?'star':S.tab=='rec'?'clock':'search','xl')}</div>${S.tab=='fav'?'لم تضف صيغاً للمفضلة بعد.<br>اضغط ☆ بجانب أي صيغة':S.tab=='rec'?'ستظهر هنا آخر الصيغ التي فتحتها':'لا توجد نتائج مطابقة'}</div>`;
+  if(!L.length)h+=`<div class="em"><div>${svg(S.tab=='fav'||S.tab=='favs'?'star':S.tab=='rec'?'clock':'search','xl')}</div>${S.tab=='fav'||S.tab=='favs'?'لم تضف صيغاً للمفضلة بعد.<br>اضغط ☆ بجانب أي صيغة':S.tab=='rec'?'ستظهر هنا آخر الصيغ التي فتحتها':'لا توجد نتائج مطابقة'}</div>`;
   h+=L.slice(0,S.n).map(row).join('');if(L.length>S.n)h+='<div class="more" id="more">جارٍ تحميل المزيد…</div>';m.innerHTML=h;
   const mo=$('#more');if(mo&&'IntersectionObserver' in window){obs=new IntersectionObserver(e=>{if(e[0].isIntersecting){S.n+=40;render()}},{rootMargin:'300px'});obs.observe(mo)}}
 }

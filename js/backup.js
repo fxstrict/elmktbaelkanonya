@@ -1,5 +1,5 @@
 /* نسخة احتياطية لبياناتك على الجهاز (قضايا وجلسات ومواعيد ومفضلة وإعدادات) واستعادتها أو دمجها. */
-const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme','pa','acc','lic','trial0','fillm','hol'];
+const BKEYS=['fav','rec','lists','dls','cnt','fp','fc','theme','pa','acc','lic','trial0','fillm','hol','nums'];
 let BKP=null;
 const bkGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const bkDays=()=>{const s=localStorage.getItem('lastbk');return s?Math.floor((today12()-parseD(s))/864e5):null};
@@ -12,7 +12,7 @@ async function bkExport(){const o={app:'legal-library',ver:APP.version,date:new 
  if(navigator.canShare&&navigator.canShare({files:[file]})&&/Android|iPhone|iPad/i.test(navigator.userAgent)){try{await navigator.share({files:[file],title:name});toast('تم حفظ النسخة — احتفظ بها في مكان آمن',3500);bkSheet();return}catch(x){if(x&&x.name=='AbortError')return}}
  const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),8000);toast('⬇ بدأ تنزيل النسخة — ستجدها في التنزيلات',4500);bkSheet()}
 function bkParse(txt){let o;try{o=JSON.parse(txt)}catch(e){return null}if(!o||o.app!='legal-library'||!o.data||typeof o.data!='object')return null;const d={};
- BKEYS.forEach(k=>{if(typeof o.data[k]=='string'&&o.data[k].length<4e6){try{JSON.parse(o.data[k]);d[k]=o.data[k]}catch(e){}}});return{d,date:o.date,ver:o.ver}}
+ BKEYS.forEach(k=>{if(typeof o.data[k]=='string'&&o.data[k].length<4e6){try{if(k!='nums')JSON.parse(o.data[k]);else if(!/^(ar|en)?$/.test(o.data[k]))throw 0;d[k]=o.data[k]}catch(e){}}});return{d,date:o.date,ver:o.ver}}
 function bkMerge(b){const pj=k=>{try{return JSON.parse(b[k])}catch(e){return null}},set=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),uni=(a,c)=>[...new Set([...(a||[]),...(c||[])])];
  const fa=pj('fav');if(Array.isArray(fa))set('fav',uni(bkGet('fav'),fa));
  const ra=pj('rec');if(Array.isArray(ra))set('rec',uni(bkGet('rec'),ra).slice(0,30));

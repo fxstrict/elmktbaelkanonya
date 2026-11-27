@@ -5,7 +5,16 @@ const PRO_EPOCH=Date.UTC(2026,0,1),PRO_PLANS={1:'pro',2:'event'};
 let _proRevoked=null,_proKey=null;
 function proB32d(s){const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';s=String(s).toUpperCase().replace(/[^A-Z2-7]/g,'');let bits=0,v=0;const o=[];for(const ch of s){v=(v<<5)|A.indexOf(ch);bits+=5;if(bits>=8){bits-=8;o.push((v>>bits)&255);v&=(1<<bits)-1}}return new Uint8Array(o)}
 function proB64u(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
-function proToday(){const n=new Date();return Math.floor((Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate())-PRO_EPOCH)/864e5)}
+/* L8 (1.30.0) — تقوية بلا خادم: (1) «علامة المياه العليا» للساعة lhw: أكبر وقت شوهد على الجهاز، فلا يُعيد تأخير الساعة عدّاد الانتهاء/التجربة؛
+   (2) نسخة ثانية من trial0 وlhw في كاش pro-st تعود إن مُسح localStorage وحده؛ (3) تنبيه (لا تخفيض) إن لم يُتحقَّق من قائمة الإبطال منذ PRO.graceDays (45) يوماً.
+   حدود صريحة: الترخيص في المتصفح يردع العبث العادي فقط؛ مسح «كل بيانات الموقع» أو تعديل الكود يتجاوزه. */
+let _proHw=0;
+function proNow(){const n=Date.now();return Math.max(n,_proHw)}
+/* يرفع lhw إن تقدّم الوقت (يكتب مرة كل ساعة على الأكثر) ويحمّله في الذاكرة */
+function proTick(){const n=Date.now(),h=_l('lhw',0);if(n>h+36e5){_s('lhw',n);_proHw=n}else _proHw=h;return _proHw}
+/* الساعة متأخرة عن آخر استخدام بأكثر من يومين؟ */
+function proClockBack(){return Date.now()<proTick()-2*864e5}
+function proToday(){const n=new Date(proNow());return Math.floor((Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate())-PRO_EPOCH)/864e5)}
 /* يقرأ الكود دون تحقق من التوقيع */
 function proParse(code){
  const m=String(code||'').trim().replace(/\s+/g,'').split('.');
@@ -32,7 +41,7 @@ async function proVerify(code){
 function proIsRevoked(n){const l=_proRevoked||_l('revk',[]);return l.indexOf(n)>=0}
 async function proLoadRevoked(){
  try{const r=await fetchT('data/revoked.json?t='+Date.now(),{cache:'no-store'},4000);if(!r.ok)throw 0;const j=await r.json();
-  if(j&&Array.isArray(j.revoked)){_proRevoked=j.revoked.filter(x=>Number.isInteger(x));_s('revk',_proRevoked)}}catch(e){_proRevoked=_l('revk',[])}
+  if(j&&Array.isArray(j.revoked)){_proRevoked=j.revoked.filter(x=>Number.isInteger(x));_s('revk',_proRevoked);if(_l('lic',''))_s('rvt',proNow())}}catch(e){_proRevoked=_l('revk',[])}
  return _proRevoked}
 /* التفعيل: يتحقق ثم يحفظ الكود في lic. لا يحفظ كوداً منتهياً أو مُبطَلاً */
 async function proActivate(code){
@@ -40,25 +49,33 @@ async function proActivate(code){
  if(!v.ok)return v;
  if(v.expired)return{ok:false,err:'expired',label:v.label};
  if(v.revoked)return{ok:false,err:'revoked',label:v.label};
- _s('lic',String(code).trim().replace(/\s+/g,''));return v}
+ _s('lic',String(code).trim().replace(/\s+/g,''));if(!_l('rvt',0))_s('rvt',proNow());return v}
 function proDeactivate(){try{localStorage.removeItem('lic')}catch(e){}}
 /* التجربة المحلية */
-function proStartTrial(){if(!_l('trial0',0))_s('trial0',Date.now());return _l('trial0',0)}
-function proTrialLeft(){const t=_l('trial0',0);if(!t)return 0;const d=(typeof PRO!='undefined'&&PRO.trialDays)||14;return Math.max(0,Math.ceil(d-(Date.now()-t)/864e5))}
+function proStartTrial(){if(!_l('trial0',0))_s('trial0',proNow());proMirror();return _l('trial0',0)}
+/* النسخة الثانية في Cache API (إن وُجد): تُدمج بأقدم تجربة وأكبر lhw */
+async function proMirror(){try{if(typeof caches=='undefined')return;const c=await caches.open('pro-st');await c.put('pro-st.json',new Response(JSON.stringify({t0:_l('trial0',0),hw:_l('lhw',0)})))}catch(e){}}
+async function proStRestore(){try{if(typeof caches=='undefined')return;const c=await caches.open('pro-st'),r=await c.match('pro-st.json');if(!r)return;const m=await r.json(),t=+m.t0||0,h=+m.hw||0,cur=_l('trial0',0);
+ if(t>0&&(!cur||t<cur))_s('trial0',t);if(h>_l('lhw',0))_s('lhw',h)}catch(e){}}
+function proTrialLeft(){const t=_l('trial0',0);if(!t)return 0;const d=(typeof PRO!='undefined'&&PRO.trialDays)||14;return Math.max(0,Math.ceil(d-(proNow()-t)/864e5))}
 /* الحالة (متزامنة): تعتمد على آخر نتيجة تحقق محفوظة في الذاكرة _proLic؛ استدعِ proInit() عند الفتح */
 let _proLic=null;
 async function proInit(){
- _proRevoked=_l('revk',[]);
+ await proStRestore();proTick();_proRevoked=_l('revk',[]);
+ if(!_l('rvt',0)&&_l('lic',''))_s('rvt',proNow());
  const slow=proLoadRevoked();
  const c=_l('lic','');_proLic=c?await proVerify(c):null;
  if(_proLic&&!_proLic.ok)_proLic=null;
  await Promise.race([slow,new Promise(r=>setTimeout(r,2500))]);
+ proMirror();
  return proStatus()}
+function proStale(){const t=_l('rvt',0);return t>0&&proNow()-t>((typeof PRO!='undefined'&&PRO.graceDays)||45)*864e5}
 function proStatus(){
  if(typeof PRO=='undefined'||!PRO.enabled)return{state:'off',daysLeft:0,label:''};
+ proTick();
  const L=_proLic;
  if(L&&L.ok){const left=L.exp-proToday();
-  if(!proIsRevoked(L.serial)&&left>=0)return{state:'pro',plan:L.plan,daysLeft:left,exp:L.exp,serial:L.serial,label:L.label};
+  if(!proIsRevoked(L.serial)&&left>=0)return{state:'pro',plan:L.plan,daysLeft:left,exp:L.exp,serial:L.serial,label:L.label,stale:proStale(),clockBack:proClockBack()};
   return{state:'expired',plan:L.plan,daysLeft:0,exp:L.exp,serial:L.serial,label:L.label,revoked:proIsRevoked(L.serial)}}
  const t=proTrialLeft();
  if(t>0)return{state:'trial',daysLeft:t,label:''};

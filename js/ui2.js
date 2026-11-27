@@ -59,12 +59,23 @@ const UIG={
  download:'<path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',
  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+ trash:'<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/>',
+ image:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
+ camera:'<path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13.5" r="3.5"/>',
+ card:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M6.5 15h3"/>',
+ gift:'<rect x="4" y="9.5" width="16" height="10.5" rx="1.5"/><path d="M3 9.5h18V7H3zM12 7v13"/>',
+ user:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.500 20c0-4 3.400-6.500 7.500-6.500s7.500 2.500 7.500 6.500"/>',
+ chart:'<path d="M4 20V4M4 20h16M8 16v-5M12 16V8M16 16v-3"/>',
+ check:'<path d="m5 12.500 4.500 4.500L19 7.500"/>',
+ hash:'<path d="M9.500 4 8 20M16 4l-1.500 16M4.500 9h15.500M4 15h15.500"/>',
+ play:'<path d="M8 5.500v13l10.500-6.500z"/>',
  send:'<path d="m21 3-9.5 18-2.3-7.7L1.5 11z"/><path d="m21 3-11.8 10.3"/>'
 };
 const svg=(n,c)=>`<svg class="ico${c?' '+c:''}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${UIG[n]||UIG.doc}</svg>`;
 /* عناصر ثابتة في index.html: <span data-i="اسم"> تُملأ بالأيقونة */
 function uiFill(root){(root||document).querySelectorAll('[data-i]:empty').forEach(e=>{e.innerHTML=svg(e.dataset.i)})}
 uiFill();
+try{if(JSON.parse(localStorage.getItem('nums'))=='ar')document.documentElement.dataset.nums='ar'}catch(e){}
 (function(){
  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  /* ---------- الرئيسية: ترحيب + أدوات سريعة ---------- */
@@ -84,6 +95,7 @@ uiFill();
   sheet(`<h2 class="sht">المزيد</h2><div class="shm">باقي أقسام المكتبة والإعدادات</div><div class="ml">`
    +mr('data-act="mtab" data-tab="bc"','barcode','الباركودات','باركودات الجلسات حسب المحافظة')
    +mr('data-act="mtab" data-tab="rec"','clock','الأخيرة','آخر الصيغ التي فتحتها')
+   +mr('data-act="nums"','hash','شكل الأرقام',document.documentElement.dataset.nums=='ar'?'الآن: عربية ٠١٢٣ — اضغط للتبديل':'الآن: إنجليزية 0123 — اضغط للتبديل')
    +mr('data-act="bk"','save','نسخة احتياطية','حفظ واستعادة بياناتك')
    +mr('data-act="ntf"','bell','التنبيهات','مواعيد الجلسات والمهل')
    +mr('data-act="lock"','lock','قفل التطبيق','رمز سري على هذا الجهاز')
@@ -96,7 +108,7 @@ uiFill();
   sheet(`<h2 class="sht">الأدوات</h2><div class="shm">كل ما يحتاجه المحامي في مكان واحد</div>${typeof proBtn=='function'?'<div class="acts one" style="margin-bottom:10px">'+proBtn()+'</div>':''}`
    +`<button class="tl big" data-act="hub"><span class="ti2">${svg('scan')}</span><span class="mt"><b>أدوات المستندات</b><small>مسح · PDF · تحرير · نص · مكتبتي</small></span></button>`
    +tg('القضايا والمواعيد',tl('calc','calendar','حاسبة المواعيد')+tl('agenda','clock','الأجندة')+tl('poa','pen','أرشيف التوكيلات'))
-   +tg('إدارة القضايا',tl('l5sch','clipboard','جدول الجلسات')+tl('l5dec','gavel','سجل القرارات')+tl('l5time','clock','سجل الوقت')+tl('l5cf','shield','تعارض المصالح'),'c2')
+   +tg('إدارة القضايا',tl('l5sch','clipboard','جدول الجلسات')+tl('l5dec','gavel','سجل القرارات')+tl('l5time','clock','سجل الوقت')+tl('l5cf','shield','تعارض المصالح')+tl('dgtool','doc','مذكرات وصحف'))
    +tg('الحسابات',tl('fees','receipt','الأتعاب')+tl('int','calc','الفوائد')+tl('mw','pie','المواريث'))
    +tg('مرجع',tl('guide','compass','ماذا أفعل؟')+tl('dir','pin','دليل العناوين')+tl('tab','barcode','الباركودات').replace('data-act="tab"','data-act="mtab" data-tab="bc"'))
    +tg('النظام',tl('bk','save','نسخة احتياطية')+tl('ntf','bell','التنبيهات')+tl('hdready','offline','بلا إنترنت')+tl('lock','lock','قفل')+tl('upd','refresh','تحديث')))};
@@ -107,13 +119,44 @@ uiFill();
  /* ---------- قائمة القضايا ---------- */
  const bcls=st=>st==CST[0]?'ok':/حجز|محجوز/.test(st)?'gold':/منتهي|حكم/.test(st)?'end':'mu';
  window.casesList=function(){
-  const all=[{id:'fav',name:'المفضلة',items:FAV,fav:1},...CLS];
+  const all=[...CLS];
   return all.map(c=>{const n=!c.fav&&c.sessions&&typeof nextSess=='function'?nextSess(c):null;let chip='';
    if(n){const d=daysLeft(parseD(n.date));chip=`<span class="bdg sess${d<=3?' hot':''}">${svg('calendar','sm')}${d<0?'فائتة':d==0?'جلسة اليوم':d==1?'جلسة غداً':'جلسة بعد '+d+' يوم'}</span>`}
    const st=!c.fav&&c.status&&c.status!=CST[0]?`<span class="bdg ${bcls(c.status)}">${esc2(c.status)}</span>`:'';
    const sub=c.fav?'':(typeof caseSub=='function'?caseSub(c).replace(/ · 🗓 [^·]*/,''):'');
    return `<div class="cs${c.fav?' fv':''}" data-act="lopen" data-id="${c.id}"><span class="csi">${svg(c.fav?'star':'briefcase')}</span><div class="csx"><b>${esc2(c.name)}</b><small>${c.items.filter(i=>byId[i]).length} صيغة${sub}</small>${st||chip?`<div class="csb">${st}${chip}</div>`:''}</div><span class="mc">${svg('chev')}</span></div>`}).join('')};
+
+
+ /* ---------- شارة المرحلة على بطاقة النتيجة ---------- */
+ const STG={'رفع الدعوى وإعلانها':['رفع الدعوى','s1'],'أثناء نظر الدعوى والطعون':['أثناء النظر والطعون','s2'],'قبل الدعوى (إنذار / توكيل / عقد)':['قبل الدعوى','s3'],'التنفيذ وما بعد الحكم':['التنفيذ','s4'],'مستندات وإجراءات إدارية':['إدارية','s5']};
+ window.stageChip=function(d){const x=STG[d.s];return x?`<div class="rbd"><span class="stg ${x[1]}">${x[0]}</span></div>`:''};
+ /* ---------- «جلد الأيقونات»: يحوّل الإيموجي في بداية النص (أزرار، عناوين، لافتات، رسائل) إلى أيقونات SVG موحّدة دون لمس 800 نص في الملفات.
+    الجدول EM هو المرجع؛ ما ليس فيه يبقى كما هو. لإيقافه احذف هذه الكتلة (لا يعتمد عليها أي منطق). ---------- */
+ const EM={'⚖':'scale','⚠':'alert','📄':'doc','📋':'clipboard','🧾':'receipt','📜':'doc','📑':'files','⬇':'download','📥':'download','➕':'plus','🗑':'trash','🧹':'trash','🔒':'lock','🔐':'lock','🔓':'lock','🔑':'key','💾':'save','🗄':'save','🗂':'folder','📂':'folder','📁':'folder','🗓':'calendar','📅':'calendar','⏰':'clock','📤':'send','📚':'library','📖':'book','📘':'book','📕':'book','🖼':'image','📸':'camera','📷':'camera','💳':'card','💬':'chat','🖋':'pen','✏':'pen','✒':'pen','✍':'pen','📝':'pen','🔍':'search','🔎':'search','🔗':'link','⭐':'star','🔄':'refresh','🔁':'refresh','↻':'refresh','♻':'refresh','👁':'eye','🎁':'gift','👤':'user','💰':'receipt','⚙':'filter','🏛':'landmark','📊':'chart','🧭':'compass','📍':'pin','📌':'pin','🛡':'shield','🔔':'bell','🏠':'home','💼':'briefcase','🏢':'building','✕':'x','✖':'x','✔':'check','✅':'check','✓':'check','📏':'scan','🪪':'user','🧰':'briefcase','🧩':'layers','🔳':'scan','⛔':'ban','🔀':'refresh','🗜':'files','👷':'user','🛂':'user','📟':'doc','🔤':'doc','⏱':'clock','▶':'play'};
+ const ER=new RegExp('^\\s*('+Object.keys(EM).join('|')+')\uFE0F?\\s*'),SKIP=/^(OPTION|TEXTAREA|SCRIPT|STYLE|TITLE|SVG|INPUT)$/;
+ function skin(root){if(!root||root.nodeType!=1&&root.nodeType!=11)return;const w=document.createTreeWalker(root,4,null),L=[];let n;while(n=w.nextNode()){if(!n.previousSibling&&n.parentNode&&!SKIP.test(n.parentNode.nodeName)&&ER.test(n.nodeValue))L.push(n)}
+  L.forEach(t=>{const m=ER.exec(t.nodeValue);if(!m)return;t.nodeValue=t.nodeValue.slice(m[0].length);const sp=document.createElement('span');sp.className='eic';sp.setAttribute('aria-hidden','true');sp.innerHTML=svg(EM[m[1]],'sm');t.parentNode.insertBefore(sp,t)})}
+
+ /* ---------- تبويبات ملف القضية (1.28.3): قسم واحد يظهر في كل مرة. لا تغيير في البنية: كل ابن مباشر لـ .cp يُوسَم data-ct بحسب عنوانه، ويخفي CSS ما لا يطابق التبويب النشط. ما لا عنوان له يتبع ما قبله (وأي .acts تذهب إلى «المستندات»). اختيار التبويب في الذاكرة فقط (لكل قضية) ولا يُكتب في أي تخزين. ---------- */
+ const CT=[['info','القضية'],['docs','المستندات'],['fin','الأتعاب'],['memo','المذكرات']],CTR=[[/بيانات القضية|الجلسات|المواعيد/,'info'],[/مستندات الرفع|التوكيلات|مواريث/,'docs'],[/الأتعاب|الحسابات|سجل الوقت|تعارض/,'fin'],[/المذكرات|الصحف|المسودات/,'memo']],ctSel={};
+ const ctTitle=e=>{const b=e.matches('.cph')?e.querySelector('b'):e.querySelector(':scope > .cph b');return b?b.textContent:''};
+ function ctBadge(cp,k){try{const c=(typeof CLS!='undefined'&&CLS.find(x=>String(x.id)==String(k)))||null;if(!c)return;const pa=typeof PA!='undefined'&&Array.isArray(PA)?PA.filter(x=>x.case==c.id).length:0;
+  const n={info:(c.sessions||[]).filter(x=>!x.done).length,docs:(c.items||[]).length+pa,fin:(c.tl||[]).length,memo:(c.dr||[]).length};
+  cp.querySelectorAll(':scope > .cpnav .cpn').forEach(b=>{const v=n[b.dataset.t]|0;let i=b.querySelector('.cpc');if(!v){if(i)i.remove();return}if(!i){i=document.createElement('i');i.className='cpc';i.setAttribute('aria-hidden','true');b.appendChild(i)}const t=v>99?'99+':String(v);if(i.textContent!==t)i.textContent=t})}catch(e){}}
+ function ctSync(cp){let cur='info';[...cp.children].forEach(e=>{if(e.classList.contains('cpnav'))return;const t=ctTitle(e),r=t&&CTR.find(x=>x[0].test(t));if(r)cur=r[1];else if(e.matches('.acts'))cur='docs';e.dataset.ct=cur});
+  const k=S.cl||'',on=ctSel[k]||'info';ctBadge(cp,k);cp.dataset.ctab=on;cp.querySelectorAll(':scope > .cpnav .cpn').forEach(b=>{const y=b.dataset.t==on;b.classList.toggle('on',y);b.setAttribute('aria-selected',y)})}
+ function caseNav(x){if(!x||!x.querySelectorAll)return;(x.matches&&x.matches('.cp')?[x]:[...x.querySelectorAll('.cp')]).forEach(cp=>{
+  if(!cp.querySelector(':scope > .cpnav')){if([...cp.children].filter(e=>e.matches('.cph')||e.querySelector(':scope > .cph')).length<4)return;
+   const top=document.querySelector('.top');cp.insertAdjacentHTML('afterbegin',`<div class="cpnav" style="top:${top?top.offsetHeight:120}px" role="tablist" aria-label="أقسام القضية">${CT.map(t=>`<button class="cpn" role="tab" data-act="cptab" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>`)}
+  ctSync(cp)})}
+ let q=new Set(),raf=0;
+ const mo=new MutationObserver(ms=>{ms.forEach(m=>m.addedNodes.forEach(x=>{if(x.nodeType==1)q.add(x)}));if(!raf)raf=requestAnimationFrame(()=>{raf=0;const a=[...q];q.clear();a.forEach(x=>{if(x.isConnected){skin(x);caseNav(x);const pp=x.parentElement;if(pp&&pp.classList.contains('cp')&&!x.classList.contains('cpnav'))caseNav(pp)}})})});
+ const start=()=>{skin(document.body);caseNav(document.body);mo.observe(document.body,{childList:true,subtree:true})};
+ if(document.body)start();else document.addEventListener('DOMContentLoaded',start);
  document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;
+  if(a=='nums'){const on=document.documentElement.dataset.nums=='ar';if(on)delete document.documentElement.dataset.nums;else document.documentElement.dataset.nums='ar';try{sv('nums',on?'en':'ar')}catch(x){}moreSheet();return}
+  if(a=='cptab'){const cp=el.closest('.cp');if(!cp)return;ctSel[S.cl||'']=el.dataset.t;ctSync(cp);const nv=cp.querySelector(':scope > .cpnav'),top=document.querySelector('.top'),r=cp.getBoundingClientRect(),lim=(top?top.offsetHeight:0)+4;if(r.top<lim)scrollBy({top:r.top-lim,behavior:'auto'});return}
+  if(a=='cpjump'){const t=document.getElementById(el.dataset.to);if(t)t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});return}
   if(a=='scope'){const v=el.dataset.v;S.f={t:'',b:'',p:'',s:'',j:''};S.q='';const q=document.querySelector('#q');if(q)q.value='';if(v=='books')go('lib');else{if(v=='rulings')S.f.t='مبادئ وأحكام';else if(v=='laws')S.f.t='تشريعات وقرارات';go('all')}return}
   
   if(a=='more')moreSheet();

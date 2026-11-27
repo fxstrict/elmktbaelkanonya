@@ -34,7 +34,7 @@ function lvHome(){const q=nz((S.q||'').trim());let h=lvSetupBanner();
  return h||'<div class="em"><div>🔎</div>لا توجد أقسام مطابقة</div>'}
 function lvFolderHtml(){const top=LV.stack[LV.stack.length-1],c=LV.cur,q=nz((S.q||'').trim());
  let h=`<div class="bar2"><button class="lnk" data-act="lvback">← رجوع</button><b style="flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${LV.stack.map(x=>esc2(x.n)).join(' › ')}</b><button class="lnk" data-act="shfolder">📤 مشاركة</button></div>`;
- if(!c||c.loading)return h+'<div class="em"><div>⏳</div>جارٍ تحميل المحتوى…</div>';
+ if(!c||c.loading)return h+'<div class="sk" aria-hidden="true">'+'<div class="skr"></div>'.repeat(6)+'</div><div class="shm" style="text-align:center" role="status">جارٍ تحميل المحتوى…</div>';
  if(c.err)return h+`<div class="wn">${c.err==403?'رفض درايف الطلب (403): تأكد أن المجلد مشارك «لأي شخص لديه الرابط»، وأن Drive API مفعّل، وأن المفتاح يسمح بنطاق موقعك.':c.err==400?'مفتاح Drive API غير صحيح.':c.err==404?'المجلد غير موجود.':'تعذّر الاتصال بدرايف — تأكد من الإنترنت.'} <button class="lnk" data-act="lvsetup">إعداد الاتصال</button></div>`;
  const fl=c.folders.filter(f=>!q||nz(f.n).includes(q)),fi=c.files.filter(f=>!q||nz(f.n).includes(q));
  if(!fl.length&&!fi.length)return h+`<div class="em"><div>${q?'🔎':'📭'}</div>${q?'لا نتائج مطابقة في هذا القسم':'هذا القسم فارغ'}</div>`;
