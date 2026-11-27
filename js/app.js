@@ -24,9 +24,9 @@ function list(){const b=S.tab=='fav'||S.tab=='favs'?FAV.map(i=>byId[i]).filter(B
  if(!L.length&&p&&p.ws.length>1){L=b.filter(fl).map(d=>[d,score(d,p,true)]).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);L.near=L.length>0}
  return L}
 const row=d=>{const f=FAV.includes(d[0]);return `<div class="row" data-act="open" data-id="${d[0]}"><div class="ic">${icon('t',d.t)}</div><div class="rt"><div class="rn">${BK.has(d[0])?'⚠️ ':''}${d[1]}</div><div class="rm">${d.t} · ${d.b}${d.p!='عام'?' · '+d.p:''}${ALT[d[0]]?' · '+(ALT[d[0]].length+1)+' نسخ':''}</div>${typeof stageChip=='function'?stageChip(d):''}</div><button class="st ${f?'on':''}" data-act="fav" data-id="${d[0]}" aria-label="مفضلة">${svg('star',f?'fill':'')}</button></div>`};
-function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن محكمة أو نيابة…':S.tab=='favs'?'ابحث في المفضلة…':S.tab=='lib'&&typeof lvPh=='function'?lvPh():'ابحث في '+D.length+' صيغة…'}
+function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن محكمة أو نيابة…':S.tab=='favs'?'ابحث في المفضلة…':(S.tab=='lib'||S.tab=='codes')&&typeof lvPh=='function'?lvPh():'ابحث في '+D.length+' صيغة…'}
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab||(b.dataset.alt||'').split(' ').includes(S.tab)));
- {const sg=$('#seg');if(sg){sg.hidden=!(S.tab=='all'||S.tab=='lib'||S.tab=='favs');sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab))}}
+ {const sg=$('#seg');if(sg){sg.hidden=!(S.tab=='all'||S.tab=='lib'||S.tab=='codes'||S.tab=='favs');sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab==S.tab))}}
  $('#fe').textContent=CLS.length||'';$('#fn').textContent=nf()||'';$('#fn').hidden=!nf();$('#clr').hidden=!S.q;
  const all=S.tab=='all',gn=FA.find(x=>x[0]==S.g)[1];
  $('#qt').hidden=!all;$('#qt').innerHTML=['',...uniq('t')].map(x=>`<button class="chip ${S.f.t==x?'on':''}" data-act="ftype" data-v="${x}">${x||'الكل'}</button>`).join('');
@@ -34,7 +34,7 @@ function render(){{const q=$('#q');if(q)q.placeholder=S.tab=='bc'?'ابحث عن
  $('#af').hidden=!(all&&act.length);$('#af').innerHTML=act.map(([k,v])=>`<button class="chip x" data-act="rm" data-k="${k}">${v} ✕</button>`).join('')+(act.length>1?'<button class="chip" data-act="fclear">مسح الكل</button>':'');
  const m=$('#m');if(obs)obs.disconnect();
  if(S.tab=='bc')m.innerHTML=typeof bcHtml=='function'?bcHtml():'';
- else if(S.tab=='lib')m.innerHTML=liveHtml();
+ else if(S.tab=='lib'||S.tab=='codes')m.innerHTML=liveHtml();
  else if(S.tab=='fav')m.innerHTML=casesView();
  else if(S.tab=='home'){const c={};D.forEach(d=>c[d[S.g]]=(c[d[S.g]]||0)+1);
   m.innerHTML=(typeof homeBanners=='function'?homeBanners():'')+(typeof homeHero=='function'?homeHero():'')+`<div class="bar2 sec"><b>تصفّح الصيغ</b><button class="pill" data-act="gmenu">${gn} ▾</button></div><div class="grid">`+Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`<button class="cat" data-act="cat" data-v="${v}"><span class="ci">${icon(S.g,v)}</span><b>${v}</b><span>${n} صيغة</span></button>`).join('')+'</div>'+(typeof homeContinue=='function'?homeContinue():'')+(typeof homePopular=='function'?homePopular():'')}
@@ -63,7 +63,7 @@ function groupSheet(){sheet('<h2 class="sht">تصفّح حسب</h2>'+FA.map(([k,
 function addRec(id){REC=[id,...REC.filter(x=>x!=id)].slice(0,40);sv('rec',REC)}
 function copy(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('تم نسخ الرابط'),()=>toast(t));else toast(t)}
 function applyTheme(){const r=document.documentElement;TH=='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',TH);$('#theme').dataset.t=TH}
-function go(tab){if(tab=='fav')S.cl=null;if(tab=='lib'&&typeof LV!='undefined'){LV.stack=[];LV.cur=null}S.tab=tab;S.n=40;render();scrollTo(0,0)}
+function go(tab){if(tab=='fav')S.cl=null;if((tab=='lib'||tab=='codes')&&typeof LV!='undefined'){LV.stack=[];LV.cur=null}S.tab=tab;S.n=40;render();scrollTo(0,0)}
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act,id=el.dataset.id,k=el.dataset.k,v=el.dataset.v;
  if(a=='rec'){addRec(id);if(el.dataset.dl)dlFeedback(el);return}
  if(a=='fill'&&typeof fillOpen=='undefined'){toast('حدّث الصفحة (إعادة تحميل كاملة) ثم أعد المحاولة',3500);return}

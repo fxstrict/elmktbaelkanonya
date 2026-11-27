@@ -67,7 +67,7 @@ function shOpen(r){SH.arrived=r;if(r.k=='i'||r.k=='b'){r.id=shFull(r.k,r.id);r.n
  if(r.k=='b'){bcSheet({id:r.id,t:r.n});shPromoAdd();return}
  if(r.k=='f'){lvFileSheet({id:r.id,n:r.n||'ملف',m:shUnMime(r.m),s:0,t:''});shPromoAdd();return}
  if(r.k=='d'){const n=r.n||'قسم من المكتبة';
-  if(typeof lvKey=='function'&&lvKey()){go('lib');LV.stack=[{id:r.id,n}];S.q='';lvShow();toast('📁 '+n,2500);return}
+  if(typeof lvKey=='function'&&lvKey()){go(typeof lvTabFor=='function'?lvTabFor(r.id):'lib');LV.stack=[{id:r.id,n}];S.q='';lvShow();toast('📁 '+n,2500);return}
   sheet(`<h2 class="sht">📁 ${esc2(n)}</h2><div class="shm">قسم من المكتبة القانونية — يُفتح في درايف.</div><div class="acts one"><a class="btn pri" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${r.id}">📂 فتح القسم</a></div>`);shPromoAdd()}}
 function shArrive(tries){tries=tries||0;const r=SH.pend;if(!r)return;
  if(document.querySelector('#lk')){if(tries<240)setTimeout(()=>shArrive(tries+1),500);return}

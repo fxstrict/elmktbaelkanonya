@@ -29,7 +29,7 @@ const navPlain=h=>!/<(canvas|video|input|textarea|select)\b|contenteditable/i.te
    if(p){NAV.busy=true;try{sheet(p)}finally{NAV.busy=false}}
    else act('close');
    return true}
-  if(S.tab=='lib'&&typeof LV!='undefined'&&LV.stack&&LV.stack.length){act('lvback');return true}
+  if((S.tab=='lib'||S.tab=='codes')&&typeof LV!='undefined'&&LV.stack&&LV.stack.length){act('lvback');return true}
   if(S.tab=='bc'&&typeof BC!='undefined'&&BC.g){act('bcback');return true}
   if(S.tab=='fav'&&S.cl){act('lback');return true}
   if(S.tab!='home'){const t=NAV.tabs.pop();NAV.busy=true;try{go(t&&t!=S.tab?t:'home')}finally{NAV.busy=false}NAV.last=S.tab;return true}

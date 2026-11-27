@@ -16,7 +16,13 @@ async function lvShow(){const top=LV.stack[LV.stack.length-1];if(!top)return;con
  if(c){LV.cur={id,...c,err:null,loading:false};render()}else{LV.cur={id,folders:[],files:[],loading:true,err:null};render()}
  if(!c||Date.now()-c.t>30*60e3){try{const d=await lvFetch(id);d.t=Date.now();lvPut('dir',id,d);if(LV.stack.length&&LV.stack[LV.stack.length-1].id==id){LV.cur={id,...d,err:null,loading:false};render()}}
   catch(e){if(LV.stack.length&&LV.stack[LV.stack.length-1].id==id){if(!c)LV.cur={id,folders:[],files:[],loading:false,err:e.status||'net'};else LV.cur={...LV.cur,stale:true};render()}}}}
-const lvPh=()=>LV.stack.length?'ابحث في هذا القسم…':LV.idx?'ابحث في كل المكتبة…':'ابحث في الأقسام…';
+const lvMode=()=>S.tab=='codes'?'codes':'lib';
+const lvPh=()=>LV.stack.length?'ابحث في هذا القسم…':lvMode()=='codes'?'ابحث في الأكواد والتشريعات…':LV.idx?'ابحث في الكتب والموسوعات…':'ابحث في الأقسام…';
+/* أسماء مجلدات قسم الأكواد الجذرية: يُستعمل لحصر البحث الشامل في تبويب الأكواد (وإخراجها من تبويب الكتب) */
+const lvCodeRoots=()=>{const s=new Set();LIB.forEach(([g,it])=>{if(lvIsCodesGroup(g))it.forEach(x=>s.add(x[1]))});return s};
+const lvIsCodeEntry=(e,roots)=>roots.has(e[2]?e[2].split(' › ')[0]:e[1]);
+const lvCodeIds=()=>{const s=new Set();LIB.forEach(([g,it])=>{if(lvIsCodesGroup(g))it.forEach(x=>s.add(x[0]))});return s};
+const lvTabFor=id=>lvCodeIds().has(id)?'codes':'lib';
 const lvExt=f=>{const m=(f.n.match(/\.([A-Za-z0-9]+)$/)||[])[1];return(m||'').toLowerCase()};
 const lvType=f=>{const e=lvExt(f),mm=f.m||'';return e=='pdf'||mm=='application/pdf'?'PDF':/^docx?$/.test(e)||mm.includes('word')||mm=='application/vnd.google-apps.document'?'Word':/^xlsx?$/.test(e)||mm.includes('sheet')?'Excel':/^pptx?$/.test(e)?'PPT':/^(jpe?g|png|gif|webp)$/.test(e)?'صورة':/^(zip|rar|7z)$/.test(e)?'أرشيف':e?e.toUpperCase():'ملف'};
 const lvName=f=>f.n.replace(/\.[A-Za-z0-9]{2,5}$/,'').trim();
@@ -26,10 +32,10 @@ const lvPv=f=>f.m=='application/vnd.google-apps.document'?'https://docs.google.c
 const lvDl=f=>f.m=='application/vnd.google-apps.document'?'https://docs.google.com/document/d/'+f.id+'/export?format=docx':'https://drive.usercontent.google.com/download?id='+f.id+'&export=download';
 function lvBook(f,i){const h=lvHue(f.n);return `<button class="bk" data-act="lvfile" data-i="${i}" style="--c1:hsl(${h} 42% 30%);--c2:hsl(${(h+30)%360} 48% 20%)"><span class="tp">${lvType(f)}</span><b>${esc2(lvName(f))}</b><small>${lvSize(f.s)||'&nbsp;'}</small></button>`}
 const lvDirCard=(f,ic)=>`<button class="cat" data-act="lvdir" data-id="${f.id}" data-n="${esc2(f.n)}"><span class="ci">${ic||'📁'}</span><b>${esc2(f.n)}</b><span>فتح ‹</span></button>`;
-function lvSetupBanner(){return lvKey()?'':`<div class="wn">لإظهار كل ملفات المكتبة (الأحكام والمذكرات والأكواد والكتب) داخل التطبيق كبطاقات منظمة، فعّل الاتصال المباشر بدرايف. <button class="lnk" data-act="lvsetup">كيف أفعّله؟</button></div>`}
-function lvHome(){const q=nz((S.q||'').trim());let h=lvSetupBanner();
- if(q&&LV.idx)return lvSearchHtml(q);
- LIB.forEach(([g,items])=>{const it=items.filter(x=>!q||nz(x[1]).includes(q));if(it.length)h+=`<div class="bar2"><b>${g}</b><span>${it.length}</span></div><div class="grid">`+it.map(x=>`<button class="cat" data-act="lvdir" data-id="${x[0]}" data-n="${esc2(x[1])}"><span class="ci">${x[2]}</span><b>${x[1]}</b><span>${lvKey()?'فتح ‹':'فتح في درايف ↗'}</span></button>`).join('')+'</div>'});
+function lvSetupBanner(){return lvKey()||!LV_SHOW_SETUP_BANNER?'':`<div class="wn">لإظهار كل ملفات المكتبة (الأحكام والمذكرات والأكواد والكتب) داخل التطبيق كبطاقات منظمة، فعّل الاتصال المباشر بدرايف. <button class="lnk" data-act="lvsetup">كيف أفعّله؟</button></div>`}
+function lvHome(){const q=nz((S.q||'').trim()),mode=lvMode();let h=lvSetupBanner();
+ if(q&&LV.idx)return lvSearchHtml(q,mode);
+ LIB.forEach(([g,items])=>{if(lvIsCodesGroup(g)!=(mode=='codes'))return;const it=items.filter(x=>!q||nz(x[1]).includes(q));if(it.length)h+=`<div class="bar2"><b>${g}</b><span>${it.length}</span></div><div class="grid">`+it.map(x=>`<button class="cat" data-act="lvdir" data-id="${x[0]}" data-n="${esc2(x[1])}"><span class="ci">${x[2]}</span><b>${x[1]}</b><span>${lvKey()?'فتح ‹':'فتح في درايف ↗'}</span></button>`).join('')+'</div>'});
  if(lvKey()){const t=LV.idx?`آخر فهرسة: ${new Date(LV.idx.t).toLocaleDateString('ar-EG')} — ${LV.idx.idx.length} عنصر`:'غير مفهرسة بعد';h+=`<div class="cp" style="margin-top:12px"><div class="cph"><b>🔎 البحث الشامل</b></div><div class="shm">${LV.busy?esc2(LV.prog):'الفهرسة تقرأ أسماء كل ملفات المكتبة مرة واحدة فيصبح البحث في الخانة العلوية شاملاً لكل الأقسام ('+t+').'}</div><div class="acts"><button class="btn${LV.busy?' busy':''}" data-act="lvcrawl">${LV.idx?'🔄 تحديث الفهرسة':'▶ فهرسة المكتبة'}</button><button class="btn" data-act="lvsetup">⚙️ إعداد الاتصال</button></div></div>`}
  return h||'<div class="em"><div>🔎</div>لا توجد أقسام مطابقة</div>'}
 function lvFolderHtml(){const top=LV.stack[LV.stack.length-1],c=LV.cur,q=nz((S.q||'').trim());
@@ -42,7 +48,7 @@ function lvFolderHtml(){const top=LV.stack[LV.stack.length-1],c=LV.cur,q=nz((S.q
  LV.shown=fi.slice(0,LV.n);
  if(fi.length)h+=`<div class="bar2"><b>الكتب والملفات</b><span>${fi.length}</span></div><div class="bkg">`+LV.shown.map((f,i)=>lvBook(f,i)).join('')+'</div>'+(fi.length>LV.n?`<button class="btn wide" data-act="lvmore">عرض المزيد (${fi.length-LV.n})</button>`:'');
  return h+(c.stale?'<div class="shm">يعرض نسخة محفوظة (لا يوجد اتصال).</div>':'')}
-function lvSearchHtml(q){const ws=q.split(/\s+/).filter(Boolean),R=LV.idx.idx.filter(e=>{if(e.nn===undefined)e.nn=nz(e[1]+' '+e[2]);return ws.every(w=>e.nn.includes(w))}).sort((a,b)=>b[3]-a[3]).slice(0,100);
+function lvSearchHtml(q,mode){mode=mode||lvMode();const ws=q.split(/\s+/).filter(Boolean),roots=lvCodeRoots(),R=LV.idx.idx.filter(e=>{if(lvIsCodeEntry(e,roots)!=(mode=='codes'))return false;if(e.nn===undefined)e.nn=nz(e[1]+' '+e[2]);return ws.every(w=>e.nn.includes(w))}).sort((a,b)=>b[3]-a[3]).slice(0,100);
  LV.found=R;return `<div class="bar2"><b>نتائج البحث الشامل</b><span>${R.length}${R.length==100?'+':''}</span></div>`+(R.length?R.map((e,i)=>`<div class="pr" data-act="lvres" data-i="${i}" style="cursor:pointer"><span>${e[3]?'📁':'📄'} <b>${esc2(e[3]?e[1]:lvName({n:e[1]}))}</b><br><small>${esc2(e[2])}</small></span></div>`).join(''):'<div class="em"><div>🔎</div>لا نتائج</div>')}
 function liveHtml(){return LV.stack.length?lvFolderHtml():lvHome()}
 function lvFileSheet(f){sheet(`<h2 class="sht">${esc2(lvName(f))}</h2><div class="shm">${lvType(f)}${f.s?' · '+lvSize(f.s):''}${f.t?' · آخر تعديل '+f.t.slice(0,10):''}</div><div class="acts"><button class="btn pri span2" data-act="lvread" data-id="${f.id}">📖 قراءة داخل التطبيق</button><a class="btn" data-act="rec" data-dl="1" href="${lvDl(f)}">⬇ تحميل الملف</a><button class="btn span2" id="lvsv" data-act="lvsave" data-id="${f.id}">💾 حفظ على الجهاز (للفتح بلا إنترنت)</button><button class="btn" data-act="lvcopy" data-id="${f.id}">🔗 نسخ رابط المشاركة</button><button class="btn" data-act="lvshare">📤 مشاركة</button></div>`);LV.file=f;
@@ -64,9 +70,9 @@ async function lvCrawl(){if(LV.busy||!lvKey())return;LV.busy=true;LV.prog='جا�
  const queue=[...roots],idx=[];let active=0,done=0,files=0,failed=0;
  const worker=async()=>{for(;;){const q=queue.shift();if(!q){if(active==0)return;await new Promise(r=>setTimeout(r,40));continue}
   active++;try{const d=await lvFetch(q.id);lvPut('dir',q.id,{...d,t:Date.now()});idx.push([q.id,q.n,q.p,1,'',0]);const path=q.p?q.p+' › '+q.n:q.n;d.folders.forEach(f=>{if(!seen.has(f.id)){seen.add(f.id);queue.push({id:f.id,n:f.n,p:path})}});d.files.forEach(f=>{idx.push([f.id,f.n,path,0,f.m,f.s]);files++});done++}catch(e){failed++}
-  active--;if((done+failed)%8==0){LV.prog=`فُهرس ${done} مجلداً و${files} ملفاً…`;if(S.tab=='lib'&&!LV.stack.length)render()}}};
+  active--;if((done+failed)%8==0){LV.prog=`فُهرس ${done} مجلداً و${files} ملفاً…`;if((S.tab=='lib'||S.tab=='codes')&&!LV.stack.length)render()}}};
  await Promise.all(Array.from({length:6},worker));LV.idx={t:Date.now(),idx};await lvPut('idx','all',LV.idx);LV.busy=false;LV.prog='';
- toast(`تمت الفهرسة: ${done} مجلداً و${files} ملفاً${failed?' (تعذّر '+failed+')':''}`,3500);if(S.tab=='lib')render()}
+ toast(`تمت الفهرسة: ${done} مجلداً و${files} ملفاً${failed?' (تعذّر '+failed+')':''}`,3500);if(S.tab=='lib'||S.tab=='codes')render()}
 (async()=>{LV.idx=await lvGet('idx','all')})();
 document.addEventListener('click',async e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;
  if(a=='lvdir'){if(!lvKey()){window.open('https://drive.google.com/drive/folders/'+el.dataset.id,'_blank','noopener');return}LV.stack.push({id:el.dataset.id,n:el.dataset.n});S.q='';const i=document.querySelector('#q');if(i)i.value='';scrollTo(0,0);lvShow()}
