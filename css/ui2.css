@@ -121,7 +121,8 @@ h1{font-weight:800;letter-spacing:0}
 @font-face{font-family:'LL Digits';src:url(../fonts/ll-digits-400.woff) format('woff');font-weight:100 599;unicode-range:U+0030-0039;font-display:swap}
 @font-face{font-family:'LL Digits';src:url(../fonts/ll-digits-700.woff) format('woff');font-weight:600 900;unicode-range:U+0030-0039;font-display:swap}
 html[data-nums=ar] body,html[data-nums=ar] button,html[data-nums=ar] input,html[data-nums=ar] textarea,html[data-nums=ar] select{font-family:'LL Digits',Tajawal,system-ui,sans-serif}
-.seg button{font-size:12.5px;padding:0 4px}
+.seg button{font-size:12.5px;padding:0 4px;line-height:1.25}
+@media(max-width:400px){.seg button{font-size:12px;padding:0 2px}}
 /* ---- شاشات ضيقة (≤360px): لا تمرير أفقي ---- */
 .search{min-width:0}.search input{min-width:0;width:100%}.fbtn{flex:none}.brand{min-width:0}.brand h1{white-space:nowrap}
 @media(max-width:360px){.brand small{font-size:11px}.hb{gap:6px}.ib{width:40px;height:40px}.hero h2{font-size:20px}.qt2 b{font-size:11px}}
