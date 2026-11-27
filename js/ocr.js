@@ -2,7 +2,7 @@
    Tesseract.js (Apache-2.0) داخل المشروع في lib/ocr/. ملفاته (~16 م.ب: المحرك + بيانات العربية والإنجليزية) تُنزَّل مرة واحدة بموافقتك وتُحفظ في كاش دائم باسم hscan-ocr
    (لا يُمسح عند تحديث التطبيق) ثم يعمل OCR دون إنترنت. لا يُرفع أي مستند لأي خادم.
    التصدير: TXT وWord (RTL) وPDF قابل للبحث (طبقة نص غير مرئية). تصحيح النص يدوياً. قارئ QR/باركود (BarcodeDetector ثم jsQR). إضافة فقط: لا يُعدَّل docprep.js. */
-const OC={lang:'ara+eng',run:false,words:0};
+const OC={lang:'ara+eng',run:false,words:0,prep:true,mode:'block'};
 (function(){
  const q=s=>document.querySelector(s),E=s=>esc2(String(s==null?'':s)),wait=ms=>new Promise(r=>setTimeout(r,ms));
  const BASE=new URL('lib/ocr/',location.href).href,CACHE='hscan-ocr';
@@ -29,21 +29,29 @@ const OC={lang:'ara+eng',run:false,words:0};
  function parseWords(d){const w=[];for(const b of d.blocks||[])for(const p of b.paragraphs||[])for(const l of p.lines||[]){const ws=(l.words||[]).filter(x=>x.text&&x.text.trim());ws.forEach((x,i)=>w.push({t:fixRtl(x.text.trim()),x0:x.bbox.x0,y0:x.bbox.y0,x1:x.bbox.x1,y1:x.bbox.y1,e:i==ws.length-1}))}return w}
  async function runOcr(idx){const l=OC.lang;if(OC.run)return;if(!await ensure(l)){ocrHome();return}OC.run=true;
   sheet('<h2 class="sht">🔤 جارٍ التعرف على النص…</h2><div class="shm" id="ocp">تحضير المحرك…</div>');let w=null;
-  try{let cur='',pct=0;const upd=()=>{const e=q('#ocp');if(e)e.textContent=cur+' — '+pct+'%'};
+  try{let cur='',pct=0,note='';const upd=()=>{const e=q('#ocp');if(e)e.textContent=cur+(note?' — '+note:'')+' — '+pct+'%'};
    w=await worker(l,m=>{if(m.status=='recognizing text'){pct=Math.round(m.progress*100);upd()}});
    for(let k=0;k<idx.length;k++){const it=DP.items[idx[k]];cur='الصفحة '+(k+1)+' من '+idx.length;pct=0;upd();await wait(10);
-    const c=ocrCanvas(it),b=await dpBlob(c,'image/png'),r=await w.recognize(b,{},{blocks:true,text:true});
-    it._ocr={text:(r.data.text||'').replace(/\r/g,'').trim(),words:parseWords(r.data),w:c.width,h:c.height,conf:Math.round(r.data.confidence||0),lang:l}}
+    const c=ocrCanvas(it);let o=null;note='';
+    /* N11: تحضير الصورة (إزالة أختام/ظلال/إطارات، تصحيح الميل والحجم) ثم التعرف؛ أي فشل ⇒ المسار القديم نفسه */
+    if(OC.prep!==false&&typeof OP!='undefined'&&OP.recognize){try{const r=await OP.recognize(w,c,{mode:OC.mode,fixRtl,stage:m=>{note=m;upd()}});
+      o={text:r.text,words:r.words,w:c.width,h:c.height,conf:r.conf,lang:l,dropped:r.dropped,pi:r.info};it._ocrPrev=OP.preview()}catch(e){console.warn('N11 prep failed',e);o=null;it._ocrPrev=null}}
+    if(!o){if(typeof OP!='undefined'&&OP.setPsm)await OP.setPsm(w,3);const b=await dpBlob(c,'image/png'),r=await w.recognize(b,{},{blocks:true,text:true});
+     o={text:(r.data.text||'').replace(/\r/g,'').trim(),words:parseWords(r.data),w:c.width,h:c.height,conf:Math.round(r.data.confidence||0),lang:l}}
+    it._ocr=o}
    OC.idx=idx;SC.saved=false;ocrRes()}
   catch(e){toast('تعذّر التعرف على النص: '+String(e&&e.message||e).slice(0,100),6000);ocrHome()}
   finally{OC.run=false;if(w)try{await w.terminate()}catch(x){}}}
  /* ---------- الشاشات ---------- */
  const nSel=()=>DP.items.filter(i=>ST.sel.has(i.id)).length;
  function ocrHome(){
-  sheet(`<div class="shh"><h2 class="sht">🔤 التعرف على النص (OCR)</h2><button class="lnk" data-act="dpwork">← الصفحات</button></div><div class="shm">يستخرج النص العربي والإنجليزي من الصفحات على جهازك، ثم تصحّحه وتصدّره Word أو TXT أو PDF قابلاً للبحث. أفضل نتيجة مع صورة واضحة مقصوصة ومستقيمة (استعمل «🪄 قص + اتجاه + ميلان» و«مسح ضوئي» قبلها).</div><div class="dkc">${[['ara+eng','عربي + إنجليزي'],['ara','عربي فقط'],['eng','إنجليزي فقط']].map(x=>`<button class="chip ${OC.lang==x[0]?'on':''}" data-act="ocrlang" data-v="${x[0]}">${x[1]}</button>`).join('')}</div><div class="acts one"><button class="btn pri" data-act="ocrrun" data-v="all">▶ التعرف على كل الصفحات (${DP.items.length})</button>${nSel()?`<button class="btn" data-act="ocrrun" data-v="sel">▶ المحددة فقط (${nSel()})</button>`:''}${DP.items.some(i=>i._ocr)?'<button class="btn" data-act="ocrres">📄 عرض النتائج الحالية</button>':''}</div><div class="shm">الدقة تتفاوت: الطباعة الواضحة جيدة، والخط اليدوي والصور الضعيفة تحتاج مراجعتك. راجع الأرقام والأسماء دائماً قبل الاعتماد عليها.</div>`)}
+  sheet(`<div class="shh"><h2 class="sht">🔤 التعرف على النص (OCR)</h2><button class="lnk" data-act="dpwork">← الصفحات</button></div><div class="shm">يستخرج النص العربي والإنجليزي من الصفحات على جهازك، ثم تصحّحه وتصدّره Word أو TXT أو PDF قابلاً للبحث. أفضل نتيجة مع صورة واضحة مقصوصة ومستقيمة (استعمل «🪄 قص + اتجاه + ميلان» و«مسح ضوئي» قبلها).</div><div class="dkc">${[['ara+eng','عربي + إنجليزي'],['ara','عربي فقط'],['eng','إنجليزي فقط']].map(x=>`<button class="chip ${OC.lang==x[0]?'on':''}" data-act="ocrlang" data-v="${x[0]}">${x[1]}</button>`).join('')}</div><div class="shm"><b>تحسين الصورة قبل التعرف (N11)</b> — يزيل الأختام والتواقيع الكبيرة والإطارات والظلال ويصحّح الميل والحجم تلقائياً قبل قراءة النص.</div><div class="dkc"><button class="chip ${OC.prep!==false?'on':''}" data-act="ocrprep" data-v="1">✔ تحسين مفعّل</button><button class="chip ${OC.prep===false?'on':''}" data-act="ocrprep" data-v="0">بدون تحسين</button></div>${OC.prep!==false?`<div class="dkc"><button class="chip ${OC.mode!='lines'?'on':''}" data-act="ocrmode" data-v="block">كتلة (الأنسب غالباً)</button><button class="chip ${OC.mode=='lines'?'on':''}" data-act="ocrmode" data-v="lines">سطراً سطراً (ترتيب صارم)</button></div>`:''}<div class="acts one"><button class="btn pri" data-act="ocrrun" data-v="all">▶ التعرف على كل الصفحات (${DP.items.length})</button>${nSel()?`<button class="btn" data-act="ocrrun" data-v="sel">▶ المحددة فقط (${nSel()})</button>`:''}${DP.items.some(i=>i._ocr)?'<button class="btn" data-act="ocrres">📄 عرض النتائج الحالية</button>':''}</div><div class="shm">الدقة تتفاوت: الطباعة الواضحة جيدة، والخط اليدوي والصور الضعيفة تحتاج مراجعتك. راجع الأرقام والأسماء دائماً قبل الاعتماد عليها.</div>`)}
  function ocrRes(){const idx=DP.items.map((it,i)=>it._ocr?i:-1).filter(i=>i>=0);
   if(!idx.length){ocrHome();return}
-  sheet(`<div class="shh"><h2 class="sht">📄 نتائج النص (${idx.length} صفحة)</h2><button class="lnk" data-act="dpwork">← الصفحات</button></div><div class="shm">صحّح النص هنا مباشرة؛ تعديلاتك تُستعمل في كل التصديرات وتُحفظ في مكتبتك.</div>`+idx.map(i=>{const it=DP.items[i],o=it._ocr;return`<label class="fld"><span>${E(it.name)} — ثقة ${o.conf==null?'—':o.conf+'%'}${o.conf!=null&&o.conf<70?' ⚠ راجع بعناية':''}</span><textarea class="octa" data-oc="${i}" rows="8" dir="auto">${E(o.text)}</textarea></label>`}).join('')+`<div class="acts"><button class="btn" data-act="occopy">📋 نسخ الكل</button><button class="btn" data-act="octxt">⬇ TXT</button><button class="btn" data-act="ocdocx">📝 Word</button><button class="btn" data-act="ocpdf">📄 PDF قابل للبحث</button><button class="btn span2" data-act="ocropen">🔁 إعادة التعرف / لغة أخرى</button></div>`)}
+  sheet(`<div class="shh"><h2 class="sht">📄 نتائج النص (${idx.length} صفحة)</h2><button class="lnk" data-act="dpwork">← الصفحات</button></div><div class="shm">صحّح النص هنا مباشرة؛ تعديلاتك تُستعمل في كل التصديرات وتُحفظ في مكتبتك.</div>`+idx.map(i=>{const it=DP.items[i],o=it._ocr;return`<label class="fld"><span>${E(it.name)} — ثقة ${o.conf==null?'—':o.conf+'%'}${o.conf!=null&&o.conf<70?' ⚠ راجع بعناية':''}</span><textarea class="octa" data-oc="${i}" rows="8" dir="auto">${E(o.text)}</textarea></label>${o.dropped&&o.dropped.length?`<div class="shm">استُبعد ${o.dropped.length} مقطعاً قليل الثقة (غالباً أختام أو خط يدوي): <span dir="auto">${E(o.dropped.slice(0,6).join(' ؛ ').slice(0,160))}</span></div>`:''}${it._ocrPrev?`<button class="btn" data-act="ocprev" data-i="${i}">🔍 ما رآه المحرك (الصورة بعد التحضير)</button>`:''}`}).join('')+`<div class="acts"><button class="btn" data-act="occopy">📋 نسخ الكل</button><button class="btn" data-act="octxt">⬇ TXT</button><button class="btn" data-act="ocdocx">📝 Word</button><button class="btn" data-act="ocpdf">📄 PDF قابل للبحث</button><button class="btn span2" data-act="exopen">🧾 استخراج بيانات قانونية (تواريخ · قضايا · أطراف · جداول)</button><button class="btn span2" data-act="ocropen">🔁 إعادة التعرف / لغة أخرى</button></div>`)}
+ function ocPrev(i){const it=DP.items[i],o=it&&it._ocr;if(!it||!it._ocrPrev){ocrRes();return}const p=o.pi||{};
+  const rows=[['ارتفاع النص المقدَّر',p.H?p.H+' بكسل':'—'],['الميلان المصحَّح',p.rotated?p.skew+'°':'لا حاجة'],['تكبير/تصغير',p.scale&&p.scale!=1?'×'+p.scale:'لا'],['أختام وتواقيع وكتل محذوفة',(p.blobs||0)+(p.inner?' (+'+p.inner+' داخل ختم)':'')],['خطوط وإطارات محذوفة',(p.lines||0)+(p.frames||0)+(p.runPx?' (+خطوط طويلة)':'')],['حبر ملوّن ممحو',p.colorFrac?(p.colorFrac*100).toFixed(2)+'% من الصفحة':(p.colorOff?'معطّل (صفحة ملوّنة)':'لا')],['غبار محذوف',p.specks||0],['وقت التحضير',p.ms?p.ms+' م.ث':'—']];
+  sheet(`<div class="shh"><h2 class="sht">🔍 ما رآه المحرك — ${E(it.name)}</h2><button class="lnk" data-act="ocrres">← النتائج</button></div><div class="shm">هذه الصورة التي قرأ منها المحرك بعد التحضير. إن ظهر فيها نص ناقص أو ختم باقٍ فأرسل لي الصورة الأصلية مع هذه الصورة.</div><img src="${it._ocrPrev}" alt="" style="width:100%;border-radius:10px;border:1px solid #8884;background:#fff">`+rows.map(r=>`<div class="pr"><span>${r[0]}</span><b>${E(r[1])}</b></div>`).join(''))}
  const allText=()=>DP.items.map(it=>it._ocr&&it._ocr.text).filter(t=>t!=null);
  /* ---------- TXT وWord ---------- */
  const txtOut=()=>{const p=DP.items.filter(i=>i._ocr).map((it,k,a)=>(a.length>1?'— '+it.name+' —\n\n':'')+it._ocr.text);return p.join('\n\n\n')};
@@ -116,6 +124,9 @@ const OC={lang:'ara+eng',run:false,words:0};
   else if(a=='ocrlang'){OC.lang=v;ocrHome()}
   else if(a=='ocrrun'){const idx=v=='sel'?DP.items.map((it,i)=>ST.sel.has(it.id)?i:-1).filter(i=>i>=0):DP.items.map((_,i)=>i);if(idx.length)await runOcr(idx)}
   else if(a=='ocrres')ocrRes();
+  else if(a=='ocrprep'){OC.prep=v=='1';ocrHome()}
+  else if(a=='ocrmode'){OC.mode=v=='lines'?'lines':'block';ocrHome()}
+  else if(a=='ocprev')ocPrev(+el.dataset.i);
   else if(a=='occopy'){const t=txtOut();try{await navigator.clipboard.writeText(t);toast('📋 نُسخ النص',1800)}catch(x){toast('تعذّر النسخ — استعمل TXT',2500)}}
   else if(a=='octxt'){dpSave({name:dpBase()+'.txt',blob:new Blob(['﻿'+txtOut()],{type:'text/plain;charset=utf-8'})})}
   else if(a=='ocdocx'){dpSave({name:dpBase()+'.docx',blob:new Blob([docxBytes(allText())],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})})}
@@ -125,4 +136,5 @@ const OC={lang:'ara+eng',run:false,words:0};
   else if(a=='qrcam')await qrCam();
   else if(a=='qrcopy'){try{await navigator.clipboard.writeText(el.dataset.t);toast('📋 نُسخ',1500)}catch(x){toast('تعذّر النسخ',2000)}}
   }catch(x){toast('تعذّرت العملية: '+String(x&&x.message||x).slice(0,80),4000)}});
+ OC.cached=cached;OC.ensure=ensure; /* L0: تستعملهما شاشة الجاهزية بلا إنترنت (harden.js) */
 })();

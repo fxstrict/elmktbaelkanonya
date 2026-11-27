@@ -9,9 +9,9 @@ const HD={db:null,cur:null,caseId:'',caseName:'',client:'',dtype:'',n:0,clientF:
   r.onsuccess=()=>{HD.db=r.result;HD.db.onclose=HD.db.onversionchange=()=>{HD.db=null};res(HD.db)};r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error('blocked'))}catch(e){rej(e)}});
  const rq=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
  const done=t=>new Promise((res,rej)=>{t.oncomplete=()=>res();t.onerror=t.onabort=()=>rej(t.error||new Error('abort'))});
- const get=async(s,k)=>{const d=await open();return rq(d.transaction(s).objectStore(s).get(k))};
- const all=async s=>{const d=await open();return rq(d.transaction(s).objectStore(s).getAll())};
- const put=async(s,v,k)=>{const d=await open(),t=d.transaction(s,'readwrite');k===undefined?t.objectStore(s).put(v):t.objectStore(s).put(v,k);return done(t)};
+ const get=async(s,k)=>{const d=await open();return DVX.dec(s,k,await rq(d.transaction(s).objectStore(s).get(k)))};
+ const all=async s=>{const d=await open();return DVX.decAll(s,await rq(d.transaction(s).objectStore(s).getAll()))};
+ const put=async(s,v,k)=>{const d=await open(),w=await DVX.enc(s,k===undefined?v.id:k,v),t=d.transaction(s,'readwrite');k===undefined?t.objectStore(s).put(w):t.objectStore(s).put(w,k);return done(t)};
  const clean=(o,keep)=>{};
  async function rmDoc(id){const d=await open(),t=d.transaction(['docs','blobs'],'readwrite');t.objectStore('docs').delete(id);t.objectStore('blobs').delete(IDBKeyRange.bound(id+'/',id+'/￿'));return done(t)}
  HD.get=get;HD.all=all;HD.put=put;
@@ -37,9 +37,9 @@ const HD={db:null,cur:null,caseId:'',caseName:'',client:'',dtype:'',n:0,clientF:
    const settings={};SET.forEach(k=>settings[k]=DP[k]);
    const nm=(DP.name||'').trim()||(old&&old.name)||('مستند '+isoD(new Date())+' '+new Date().toTimeString().slice(0,5));
    const rec={id,kind:'scan',name:nm,caseId:HD.caseId||'',caseName:HD.caseName||'',text:items.map(i=>i.txt).filter(Boolean).join('\n'),client:HD.client||'',dtype:HD.dtype||'',tags:[...new Set([...((old&&old.tags)||[]),...(HD.dtype?[HD.dtype]:[])])],folder:(old&&old.folder)||'',created:(old&&old.created)||Date.now(),updated:Date.now(),pages:items.length,size,thumb:old&&HD.th==t0?old.thumb:HD.thv,items,sigs,settings};
-   const d=await open(),t=d.transaction(['docs','blobs'],'readwrite'),bs=t.objectStore('blobs');puts.forEach(([k,b])=>bs.put(b,k));
+   const ePuts=await Promise.all(puts.map(async([k,b])=>[k,await DVX.enc('blobs',k,b)])),eRec=await DVX.enc('docs',id,rec),d=await open(),t=d.transaction(['docs','blobs'],'readwrite'),bs=t.objectStore('blobs');ePuts.forEach(([k,b])=>bs.put(b,k));
    bs.openKeyCursor(IDBKeyRange.bound(id+'/',id+'/￿')).onsuccess=e=>{const c=e.target.result;if(c){if(!keep.has(c.key))bs.delete(c.key);c.continue()}};
-   t.objectStore('docs').put(rec);await done(t);
+   t.objectStore('docs').put(eRec);await done(t);
    if(!old)HD.n++;HD.last=sig;SC.saved=true;HD.err=false;HD.lim=false;stat('💾 محفوظ تلقائياً في مكتبتك ✓ '+new Date().toTimeString().slice(0,5));
    if(!HD.persisted&&navigator.storage&&navigator.storage.persist){HD.persisted=true;navigator.storage.persist().catch(()=>{})}
   }catch(e){stat('⚠ تعذّر الحفظ التلقائي');if(!HD.err){HD.err=true;toast(e&&e.name=='QuotaExceededError'?'مساحة الجهاز ممتلئة — تعذّر الحفظ في المكتبة. صدّر ملف المشروع (.hscan)':'تعذّر الحفظ في مكتبة الجهاز — احفظ ملف المشروع (.hscan)',5000)}}
@@ -47,7 +47,7 @@ const HD={db:null,cur:null,caseId:'',caseName:'',client:'',dtype:'',n:0,clientF:
  HD.save=save;
  /* حفظ ملف PDF في المكتبة (تستعمله أدوات PDF) */
  HD.addPdf=async(name,bytes,thumb)=>{if(HD.off)throw new Error('off');const id=rid(),k=id+'/pdf',b=new Blob([bytes],{type:'application/pdf'});
-  const d=await open(),t=d.transaction(['docs','blobs'],'readwrite');t.objectStore('blobs').put(b,k);t.objectStore('docs').put({id,kind:'pdf',name,caseId:HD.caseId||'',caseName:HD.caseName||'',client:HD.client||'',tags:[],folder:'',created:Date.now(),updated:Date.now(),pages:0,size:b.size,thumb:thumb||'',k});await done(t);HD.n++;return id};
+  const rec={id,kind:'pdf',name,caseId:HD.caseId||'',caseName:HD.caseName||'',client:HD.client||'',tags:[],folder:'',created:Date.now(),updated:Date.now(),pages:0,size:b.size,thumb:thumb||'',k},eb=await DVX.enc('blobs',k,b),er=await DVX.enc('docs',id,rec),d=await open(),t=d.transaction(['docs','blobs'],'readwrite');t.objectStore('blobs').put(eb,k);t.objectStore('docs').put(er);await done(t);HD.n++;return id};
  /* ---------- الفتح ---------- */
  async function openDoc(id){const r=await get('docs',id);if(!r){toast('المستند غير موجود',2000);return}
   if(r.kind=='pdf'){const b=await get('blobs',r.k);if(!b){toast('الملف مفقود',2000);return}if(typeof pxOpenBlob=='function')pxOpenBlob(b,r.name,r.id);return}

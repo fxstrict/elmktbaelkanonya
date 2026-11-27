@@ -13,7 +13,14 @@ const PX={f:null,mg:[],org:null,th:{},tk:0,sp:{mode:'ranges',txt:'',n:'2'},cp:{l
  async function jsDoc(f){const js=await libJS();if(f._d)return f._d;
   for(;;){try{f._d=await js.getDocument({data:f.bytes.slice(),password:f.pw||undefined,isEvalSupported:false}).promise;return f._d}
    catch(e){if(e&&e.name=='PasswordException'){const p=prompt(e.code==2?'كلمة المرور غير صحيحة، أعد المحاولة:':'الملف محمي بكلمة مرور. اكتبها لفتحه:');if(p==null)throw new Error('cancel');f.pw=p;f.enc=true;continue}throw e}}}
- async function plDoc(f){const L=await libPL();if(f.enc)throw new Error('enc');try{return await L.PDFDocument.load(f.bytes)}catch(e){if(/encrypt/i.test(String(e&&(e.message||e.name))))throw new Error('enc');throw e}}
+ /* R1: ملف يفتحه PDF.js ويرفضه pdf-lib (مشفّر بكلمة فارغة، أو غير قياسي/مقطوع الذيل) لا يُسمّى «تالفاً»: تُحوَّل صفحاته لصور بجودة عالية (النص لا يبقى قابلاً للتحديد) ويُنبَّه المستخدم */
+ async function rasterDoc(f,L){const n=(await jsDoc(f)).numPages,out=await L.PDFDocument.create();
+  for(let p=1;p<=n;p++){pp('تحويل صفحات الملف إلى صور '+p+' / '+n);await wait(0);const c=await rend(f,p,1800),b=await new Promise(r=>c.toBlob(r,'image/jpeg',0.85)),im=await out.embedJpg(new Uint8Array(await b.arrayBuffer())),pg=out.addPage([c._pw,c._ph]);pg.drawImage(im,{x:0,y:0,width:c._pw,height:c._ph});c.width=c.height=1}
+  return out}
+ async function plDoc(f){const L=await libPL();if(f.enc)throw new Error('enc');if(f._rs)return f._rs;
+  try{return await L.PDFDocument.load(f.bytes)}catch(e0){
+   try{const d=await rasterDoc(f,L);f._rs=d;f.rast=true;toast('ℹ️ «'+f.name+'» ملف مقيَّد أو غير قياسي: حُوِّلت صفحاته لصور (النص لن يكون قابلاً للتحديد)',6500);return d}
+   catch(e1){throw new Error('تعذّرت قراءة «'+f.name+'»: '+String((e1&&e1.message)||e0.message).slice(0,70))}}}
  async function rend(f,p,maxPx){const d=await jsDoc(f),pg=await d.getPage(p),v1=pg.getViewport({scale:1}),k=Math.min(maxPx,3200)/Math.max(v1.width,v1.height),vp=pg.getViewport({scale:k}),c=dpCv(vp.width,vp.height),x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:x,viewport:vp}).promise;pg.cleanup();c._pw=v1.width;c._ph=v1.height;return c}
  async function readPdf(file){toast('⏳ جارٍ قراءة الملف…',1500);const bytes=new Uint8Array(await file.arrayBuffer()),f={name:(file.name||'ملف').replace(/\.pdf$/i,'')||'ملف',bytes,size:bytes.length,n:0,pw:'',enc:false,_d:null};
@@ -47,18 +54,29 @@ const PX={f:null,mg:[],org:null,th:{},tk:0,sp:{mode:'ranges',txt:'',n:'2'},cp:{l
   if(pg.length>60&&!confirm('عدد كبير ('+pg.length+' صفحة) قد يملأ ذاكرة الهاتف. متابعة؟'))return;prog('جارٍ تحويل الصفحات…');const add=[];
   try{for(let i=0;i<pg.length;i++){pp((i+1)+' / '+pg.length);await wait(10);const c=await rend(f,pg[i],+PX.sq||1400);add.push({id:++_dpid,name:f.name+' ص'+pg[i],orig:c,ops:[],size:0,th:null})}}catch(e){fail(e);home();return}
   if(DP.items.length&&!confirm('إضافة '+add.length+' صفحة إلى الصفحات الحالية؟ (إلغاء = استبدالها)'))DP.items=[];DP.items.push(...add);if(!DP.name)DP.name=f.name;DP.res=null;SC.saved=false;dpWork();toast('✔ أُضيفت '+add.length+' صفحة',2500)}
+ /* R3: واجهة للمساحة الموحّدة (js/workspace.js): تحويل ملف PDF إلى عناصر صفحات جاهزة لـDP.items دون أي شاشة. تعيد null عند الإلغاء. */
+ window.pxToItems=async(file,o)=>{o=o||{};const f=await readPdf(file);if(!f)return null;const mx=o.max||30;if(f.n>mx&&!confirm('«'+f.name+'» '+f.n+' صفحة؛ سيُفتح أول '+mx+' صفحة فقط لحماية ذاكرة الهاتف. متابعة؟'))return null;const n=Math.min(f.n,mx),add=[];for(let i=1;i<=n;i++){if(o.cb)o.cb(i,n);await wait(10);const c=await rend(f,i,+o.px||1400);add.push({id:++_dpid,name:f.name+' ص'+i,orig:c,ops:[],size:0,th:null})}return add};
+ window.pxThumb=thumbOf;
  /* ---------- دمج ---------- */
  const MG_PDF=/pdf/i;
- async function mgAdd(files){let bad=0;for(const file of files){try{if(MG_PDF.test(file.type)||/\.pdf$/i.test(file.name)){const f=await readPdf(file);if(!f)continue;if(f.enc){toast('«'+f.name+'» محمي بكلمة مرور — فك الحماية غير مدعوم في الدمج',5000);continue}PX.mg.push({k:'pdf',name:f.name,bytes:f.bytes,n:f.n})}
-   else{const it=await dpLoad(file);if(!it){bad++;continue}const b=await dpBlob(it.orig,'image/jpeg',0.9);PX.mg.push({k:'img',name:it.name,jpg:new Uint8Array(await b.arrayBuffer()),w:it.orig.width,h:it.orig.height,n:1})}}catch(e){bad++}}
-  if(bad)toast('تعذّرت قراءة '+bad+' ملف',3500);mgView()}
+ async function mgAdd(files){let bad=0;const bn=[];for(const file of files){try{if(MG_PDF.test(file.type)||/\.pdf$/i.test(file.name)){const f=await readPdf(file);if(!f)continue;if(f.enc){toast('«'+f.name+'» محمي بكلمة مرور — فك الحماية غير مدعوم في الدمج',5000);continue}PX.mg.push(Object.assign(f,{k:'pdf'}))}
+   else{const it=await dpLoad(file);if(!it){bad++;bn.push(file.name);continue}const b=await dpBlob(it.orig,'image/jpeg',0.9);PX.mg.push({k:'img',name:it.name,jpg:new Uint8Array(await b.arrayBuffer()),w:it.orig.width,h:it.orig.height,n:1})}}catch(e){bad++;bn.push(file.name)}}
+  if(bad)toast('تعذّرت قراءة '+bad+' ملف: '+bn.join('، ').slice(0,120),5500);mgView()}
  function mgView(){const t=PX.mg.reduce((s,x)=>s+x.n,0);
   sheet(`<div class="shh"><h2 class="sht">🔗 دمج (${PX.mg.length} ملف · ${t} صفحة)</h2><button class="lnk" data-act="pxhome">← الأدوات</button></div>`+PX.mg.map((s,i)=>`<div class="pr"><span><b>${s.k=='pdf'?'📄':'🖼'} ${E(s.name)}</b><br><small>${s.n} صفحة</small></span><button class="pb" data-act="pxmgmv" data-i="${i}" data-v="-1">⬆</button><button class="pb" data-act="pxmgmv" data-i="${i}" data-v="1">⬇</button><button class="pb" data-act="pxmgdel" data-i="${i}">🗑</button></div>`).join('')+`<div class="acts" style="margin-top:8px"><label class="btn">➕ إضافة ملفات<input type="file" id="pxma" accept="application/pdf,.pdf,image/*" multiple hidden></label><button class="btn" data-act="pxmgclr">🧹 مسح القائمة</button></div><label class="fld"><span>اسم الملف الناتج</span><input id="pxmn" value="${E(PX.mgn||'مدموج-'+isoD(new Date()))}"></label><button class="btn pri wide" data-act="pxmgrun" ${PX.mg.length<2?'disabled':''}>▶ دمج</button><div class="shm">الدمج بلا فقد: يبقى النص قابلاً للتحديد في ملفات PDF. الصور تُوضع كل صورة في صفحة A4.</div>`)}
  async function mgRun(){PX.mgn=(q('#pxmn')||{}).value;const L=await libPL().catch(fail);if(!L)return;prog('جارٍ الدمج…');
-  try{const out=await L.PDFDocument.create();let i=0;for(const s of PX.mg){pp((++i)+' / '+PX.mg.length+' — '+s.name);await wait(10);
-    if(s.k=='pdf'){let src;try{src=await L.PDFDocument.load(s.bytes)}catch(e){throw new Error('تعذّر دمج «'+s.name+'» (محمي أو تالف)')}(await out.copyPages(src,src.getPageIndices())).forEach(p=>out.addPage(p))}
-    else{const im=await out.embedJpg(s.jpg),land=s.w>s.h,pw=land?842:595,ph=land?595:842,m=18,k=Math.min((pw-2*m)/s.w,(ph-2*m)/s.h),w=s.w*k,h=s.h*k,pg=out.addPage([pw,ph]);pg.drawImage(im,{x:(pw-w)/2,y:(ph-h)/2,width:w,height:h})}}
-   const u=await out.save(),nm=(PX.mgn||'').trim()||'مدموج';res([{name:nm+'.pdf',type:'application/pdf',blob:pdfBlob(u),pages:out.getPageCount()}],{back:'pxmg',zip:nm})}
+  try{const out=await L.PDFDocument.create();let i=0,okn=0,exp=0;const bad=[],rs=[];
+   for(const s of PX.mg){pp((++i)+' / '+PX.mg.length+' — '+s.name);await wait(10);
+    try{if(s.k=='pdf'){const src=await plDoc(s),idx=src.getPageIndices(),cp=await out.copyPages(src,idx);cp.forEach(p=>out.addPage(p));exp+=idx.length;okn++;if(s.rast)rs.push(s.name)}
+     else{const im=await out.embedJpg(s.jpg),land=s.w>s.h,pw=land?842:595,ph=land?595:842,m=18,k=Math.min((pw-2*m)/s.w,(ph-2*m)/s.h),w=s.w*k,h=s.h*k,pg=out.addPage([pw,ph]);pg.drawImage(im,{x:(pw-w)/2,y:(ph-h)/2,width:w,height:h});exp++;okn++}}
+    catch(e){bad.push(s.name+' — '+String((e&&e.message)||e).slice(0,80))}}
+   if(!okn)throw new Error('لم يُدمج أي ملف: '+(bad[0]||''));
+   if(out.getPageCount()!=exp)throw new Error('عدد صفحات الناتج لا يطابق المتوقع');
+   const u=await out.save(),nm=(PX.mgn||'').trim()||'مدموج';
+   let note='دُمج '+okn+' من '+PX.mg.length+' ملف ('+out.getPageCount()+' صفحة).';
+   if(rs.length)note+='<br>🖼 حُوِّلت لصور لأنها مقيَّدة أو غير قياسية (النص غير قابل للتحديد): '+rs.map(E).join('، ');
+   if(bad.length)note+='<br>⚠ تعذّر: '+bad.map(E).join('؛ ');
+   res([{name:nm+'.pdf',type:'application/pdf',blob:pdfBlob(u),pages:out.getPageCount()}],{back:'pxmg',zip:nm,note})}
   catch(e){fail(e);mgView()}}
  /* ---------- معاينة وتنظيم ---------- */
  function orgInit(){PX.org={pages:Array.from({length:PX.f.n},(_,i)=>({p:i+1,rot:0,sel:false}))}}
