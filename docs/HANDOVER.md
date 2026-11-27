@@ -106,3 +106,21 @@ IndexedDB `hscan-db` (مكتبة الماسح)، وكاش `hscan-ocr` (ملفا�
 - النسخة المشفّرة: الحاوية `LLBX1 + iter(4) + salt(16) + iv(12) + ct` والرأس AAD. نافذة الكلمة تحلّ محل شاشة النسخ فتُعاد رسمها (`bkSheet()`) قبل تمرير الملف المفكوك لحقل جديد.
 - كشف الأتعاب يستعمل `feeSameClient` (يعتمد `CM.match`).
 - الاختبار: `node tools/x1-test.js` و`python3 tools/x1-e2e.py`.
+
+## المذكرات والصحف (L6، 1.28.0)
+- `js/doccore.js` (نواة `DC` نقية) بعد `casecore.js`؛ `js/docgen.js` بعد `casemgmt.js` و`fill.js` وقبل `vault-ui.js`. مسجّلان في `index.html` و`sw.js`.
+- لا مفاتيح تخزين جديدة: المسودات `c.dr` (داخل `lists` عبر `_s('lists',CLS)`)، والمحامي في `fp`. حقول القضية الاختيارية الجديدة: `c.ca`, `c.oa`, `c.dr`.
+- إضافة قالب: أضف عنصراً إلى `DC.TPL` (id, name, desc, capA, capB, req, f) وفرعاً في `DC.build`؛ الواجهة تبني القائمة والنموذج منه تلقائياً. كل قالب يجب أن يحوي الحقول المشتركة `COMMON`.
+- الواجهة بعد «جلد الأيقونات» تحوّل الإيموجي الأول في العنصر إلى SVG: اختبر بـ `data-act` لا بنص الإيموجي.
+- الاختبار: `node tools/l6-test.js` و`python3 tools/l6-e2e.py`.
+
+## المحتوى وحقوق النشر (L7، 1.29.0)
+- `js/rights.js` (نواة `RT` نقية + واجهة) يُحمَّل بعد `data/broken.js` وقبل `tools.js`؛ واجهته تُركَّب عند `DOMContentLoaded` لأن `itemSheet` و`contactSheet` يُعرَّفان في `app.js` المتأخر.
+- الإزالة: أضف معرّفات إلى `data/takedown.json` وارفع الإصدار؛ المفتاح المحلي `tkd` خارج `BKEYS` (لا تضفه). لإضافة صيغ: `node tools/add-rows.js ملف.csv --dry` ثم بدون `--dry`، ثم `node tools/content-audit.js --write`.
+- الاختبار: `node tools/l7-test.js` و`python3 tools/l7-e2e.py .`.
+
+## تقوية الترخيص (L8، 1.30.0)
+- كله في `js/pro.js` (+ لافتتان في `pro-renew.js`): `proNow/proTick/proClockBack/proStale/proMirror/proStRestore`. **لا تسمِّ دالة جديدة `proRestore`** (موجودة في `pro-ui.js`)؛ `l8-test.js` D4 يفحص التعارض.
+- مفاتيح `lhw` و`rvt` خارج `BKEYS` عمداً؛ كاش `pro-st` مستثنى في `sw.js`. تفاصيل وحدود: `HOSSAM_SCAN_ROADMAP.md` §20.
+- الاختبار: `node tools/l8-test.js` و`python3 tools/l8-e2e.py .`.
+
